@@ -1,17 +1,29 @@
 # HEDA Data Access API
 
-The HEDA API provides station information, latest sensor readings and historical data. Obtain a token first, then use that token to query station data.
+The HEDA API provides station information, latest sensor readings, historical data and alarm-related fields. Authenticate first, then send the returned token in station-data request bodies.
 
-## Methods
+## Contents
+
+- [API overview](#api-overview)
+- [Getting started](#getting-started)
+- [Common conventions](#common-conventions)
+- [Authentication](#authentication)
+- [Station tree](#station-tree)
+- [Station details and sensor data](#station-details-and-sensor-data)
+- [Alarm fields and additional metadata](#alarm-fields-and-additional-metadata)
+- [Items to confirm with HEDA](#items-to-confirm-with-heda)
+
+## API overview
 
 | Method | Endpoint | Purpose |
-|---|---|---|
-| POST | [/hd/user/auth.json](#authentication) | Obtain an access token. |
-| POST | [/hd/station/tree.json](#station-tree) | Discover station numbers and names from the station tree. |
-| POST | [/hd/station/detaillist.json](#station-data) | Retrieve station details and sensor data for a time range. |
+| --- | --- | --- |
+| POST | `/hd/user/auth.json` | Obtain an access token. |
+| To be confirmed | `/hd/station/tree.json` | Discover station numbers and names. |
+| POST | `/hd/station/detaillist.json` | Retrieve station details and sensor data for a time range. |
+
+The source lists POST for the station-tree endpoint in its overview but says the method is unspecified in its endpoint description. Confirm the method with HEDA before using it.
 
 ## Getting started
-Ask HEDA for your customer ID (`Cid`), application ID (`Aid`), username and password. After authentication, use `/hd/station/tree.json` to discover station numbers and names for subsequent data queries. If querying a specific subtree, obtain its root node type and ID from HEDA.
 
 Base URL for the documented deployment:
 
@@ -19,76 +31,73 @@ Base URL for the documented deployment:
 http://175.138.67.155:7077
 ```
 
-Send JSON with `Content-Type: application/json`. Preserve field spelling and capitalization.
+Obtain your customer ID (`Cid`), application ID (`Aid`), username and password from HEDA. To query a specific subtree, also obtain its root node type and ID.
 
 1. Call `/hd/user/auth.json` with your credentials.
-2. Check `Code` and `Success`, then copy `Response.Token`.
-3. Call `/hd/station/tree.json` with the token. Traverse `Response.Children` recursively and select station nodes (`Type = "STATION"`).
-4. Copy a selected station node's `StationNo` into `StationSns`, or its `Name` into `StationNms`. Both query parameters are arrays of strings.
-5. Call `/hd/station/detaillist.json` with the same JSON-body `Token`, your selected station filter and the required time range.
-6. Read `Response.Data[].Sensors[].Vals[]` for historical samples. Each sample contains `Time` and `Val`; the sensor's `Unit` supplies the measurement unit.
-
-Examples contain placeholders and illustrative data, not live API captures. Replace all `YOUR_...` values before use. cURL examples use POSIX shell line continuations; other clients can use the same URL, header and JSON body.
+2. Check the result and copy `Response.Token`.
+3. Call `/hd/station/tree.json`. Inspect the root and traverse `Children` recursively to find nodes with `Type = "STATION"`.
+4. Use a station's `StationNo` in `StationSns`, or its `Name` in `StationNms`. Both filters are arrays of strings.
+5. Call `/hd/station/detaillist.json` with the token, station filter and time range. For the first request, use one station number.
+6. Read historical samples from `Response.Data[].Sensors[].Vals[]`. Each sample has `Time` and `Val`; the sensor's `Unit` supplies the measurement unit.
 
 ## Common conventions
 
+- Send JSON with `Content-Type: application/json`.
+- Preserve field spelling and capitalization.
+- Send `Token` in the JSON request body of station endpoints.
+- Examples use placeholders and illustrative data. Replace `YOUR_...` values and example station/root identifiers before use.
+- cURL examples use POSIX shell line continuations.
+
 | Response field | JSON type | Meaning |
-|---|---|---|
-| `Code` | integer | Application result: `0` = success; non-zero = error. This is not the HTTP status code. |
-| `Success` | boolean | `true` = success; `false` = failure. |
-| `Message` | string | Result description; success examples use `OK`. |
-| `Success` | boolean | Included in the authentication and detail examples: `true` = success; `false` = failure. Not included in the supplied tree response. |
-| `Message` | string | Result description; authentication/detail examples use `OK`, while the tree example uses an empty string. |
-| `Response` | object | Endpoint-specific success payload. Error payload structure is not specified. |
+| --- | --- | --- |
+| `Code` | integer | Application result: `0` = success; non-zero = error. This is separate from the HTTP status code. |
+| `Success` | boolean | `true` = success; `false` = failure. Present in the authentication and detail examples; absent from the supplied tree example. |
+| `Message` | string | Result description. Authentication/detail examples use `OK`; the tree example uses an empty string. |
+| `Response` | object | Endpoint-specific payload. Error payload structure is unspecified. |
 
-<a id="authentication"></a>
-## /hd/user/auth.json
+Check `Code` and, when present, `Success` before reading the payload. If the service reports an invalid or expired token, authenticate again.
 
-### Purpose
+Timestamps described below are in seconds. Their epoch and timezone interpretation still require confirmation; do not infer a fixed token lifetime from the examples.
 
-Authenticate using your customer ID, application ID and credentials. Returns the token required for station-data requests.
+## Authentication
 
-### Signature
+Authenticate with your customer ID, application ID and account credentials to obtain a token.
 
-```text
-POST http://175.138.67.155:7077/hd/user/auth.json
+```http
+POST /hd/user/auth.json
 Content-Type: application/json
 ```
 
-### Body
+### Request parameters
 
 | Parameter | Required | JSON type | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `Cid` | Yes | string | Customer ID supplied by HEDA. |
-| `Aid` | Yes | string | Application ID supplied by HEDA. Confirm the deployment value: the previous table says `Uniscada`, but its examples use `scada`. |
+| `Aid` | Yes | string | Application ID supplied by HEDA. Use the value for your deployment. |
 | `UserName` | Yes | string | Integration account username. |
 | `Password` | Yes | string | Integration account password. |
 
-### Return value
-
-The common response envelope contains:
+### Response fields
 
 | Field | JSON type | Description |
-|---|---|---|
+| --- | --- | --- |
 | `Response.Token` | string | Access token for subsequent request bodies. |
 | `Response.Aid` | string | Application ID of the authenticated session. |
 | `Response.Cid` | string | Customer ID of the authenticated session. |
-| `Response.Uid` | string | User ID. |
+| `Response.Uid` | string | User ID. Use `Token` as the credential. |
 | `Response.UserName` | string | Returned user name; the source describes it as the user's real name. |
-| `Response.Ext` | string or null | Extension field; the source example contains `null`. |
-| `Response.Exp` | integer | Token-expiry timestamp in seconds. A fixed lifetime is not documented. |
+| `Response.Ext` | string or null | Extension field; the example contains `null`. |
+| `Response.Exp` | integer | Token-expiry timestamp in seconds. |
 
-### Example
+### Example request
 
-Request:
-
-```sh
+```bash
 curl --request POST 'http://175.138.67.155:7077/hd/user/auth.json' \
   --header 'Content-Type: application/json' \
   --data '{"Cid":"YOUR_CUSTOMER_ID","Aid":"YOUR_APPLICATION_ID","UserName":"YOUR_USERNAME","Password":"YOUR_PASSWORD"}'
 ```
 
-Illustrative response:
+### Example response
 
 ```json
 {
@@ -107,61 +116,42 @@ Illustrative response:
 }
 ```
 
-Use `Response.Token`, not `Response.Uid`, as the credential. If the service reports an expired or invalid token, authenticate again.
+## Station tree
 
-<a id="station-tree"></a>
-## /hd/station/tree.json
+Query the hierarchy of divisions, stations and equipment nodes. Station nodes provide the filters for the station-data endpoint.
 
-### Purpose
+Endpoint: `/hd/station/tree.json`  
+Content type: `application/json`  
+HTTP method: **to be confirmed**.
 
-Query a hierarchical tree of divisions, stations and equipment nodes. Use the returned station nodes to obtain the filters needed by `/hd/station/detaillist.json`:
-
-| Selected station-node field | Subsequent query parameter | Example |
-|---|---|---|
-| `StationNo` | `StationSns` | `"800"` → `["800"]` |
-| `Name` | `StationNms` | `"No.1 Water Supply Station"` → `["No.1 Water Supply Station"]` |
-
-The JSON field is **`Name`**, with an uppercase `N`, as shown in the supplied schema and example. `ObjId` identifies a tree node; do not substitute it for `StationNo` when constructing `StationSns`.
-
-### Signature
-
-```text
-Endpoint: http://175.138.67.155:7077/hd/station/tree.json
-Content-Type: application/json
-```
-
-The supplied specification includes a JSON request body but does not state the HTTP method. Confirm the method with HEDA before sending this request.
-
-### Body
+### Request parameters
 
 | Parameter | Required | JSON type | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `Token` | Yes | string | Access token returned by authentication. |
-| `Type` | No | string | Type of the root node used as the query entry, for example `DIVISION`. |
-| `ObjId` | No | string | Unique ID of the root entry node, for example `DIV_001`. |
+| `Type` | No | string | Root node type, for example `DIVISION`. |
+| `ObjId` | No | string | Root node ID, for example `DIV_001`. |
 | `EndType` | No | string | Terminal node-type filter, for example `STATION`. |
 
-Default root behavior when `Type` or `ObjId` is omitted, supported type values and the exact pruning behavior of `EndType` are not specified. The following request illustrates a known division root with stations as the terminal type.
+### Response fields
 
-### Return value
-
-`Response` is a root node object, not an array. Each node can contain a `Children` array of nodes with the same structure.
+`Response` is a root node object. Its `Children` array contains nodes with the same structure.
 
 | Node field | JSON type | Description |
-|---|---|---|
+| --- | --- | --- |
 | `Type` | string | Node classification; examples include `DIVISION` and `STATION`. |
-| `Name` | string | Node display name. For a station node, use this in `StationNms`. |
-| `StationNo` | string | Station number. For a station node, use this in `StationSns`. Availability on non-station nodes is unspecified. |
-| `ObjId` | string | Unique node ID. |
+| `Name` | string | Display name; station nodes supply `StationNms`. |
+| `StationNo` | string | Station number; station nodes supply `StationSns`. Availability on other node types is unspecified. |
+| `ObjId` | string | Unique tree-node ID. |
 | `Position` | object | Node center coordinates. |
-| `Position.Lng` | number | Longitude, represented as a JSON number in this endpoint. |
-| `Position.Lat` | number | Latitude, represented as a JSON number in this endpoint. |
-| `Area` | array of objects | Coverage-area polygon coordinates; each entry contains numeric `Lng` and `Lat`. |
-| `Children` | array of objects | Child nodes; traverse recursively to find stations beneath nested divisions. |
+| `Position.Lng` | number | Longitude. |
+| `Position.Lat` | number | Latitude. |
+| `Area` | array of objects | Coverage-area coordinates, each containing numeric `Lng` and `Lat`. |
+| `Children` | array of objects | Child nodes. Traverse recursively to find nested stations. |
 
-### Example
+### Example request body
 
-Request body (replace the illustrative root ID with a valid one for your account):
+Replace `DIV_001` with a valid root ID for your account.
 
 ```json
 {
@@ -172,7 +162,9 @@ Request body (replace the illustrative root ID with a valid one for your account
 }
 ```
 
-Illustrative response. `StationNo` is included on the child station so the example can be used for the next query. `Area` retains the source's abbreviated coordinate example; polygon validation and closure rules are not specified.
+### Example response
+
+The `Area` example is abbreviated; it does not establish polygon validation or closure rules.
 
 ```json
 {
@@ -202,61 +194,37 @@ Illustrative response. `StationNo` is included on the child station so the examp
 }
 ```
 
-### Use the station in a data query
+### Map a station to a data-query filter
 
-From the example above:
+| Station-node field | Query parameter | Example |
+| --- | --- | --- |
+| `StationNo` | `StationSns` | `"800"` → `["800"]` |
+| `Name` | `StationNms` | `"No.1 Water Supply Station"` → `["No.1 Water Supply Station"]` |
 
-- `Response.Children[0].StationNo` supplies `StationSns: ["800"]`.
-- `Response.Children[0].Name` supplies `StationNms: ["No.1 Water Supply Station"]`.
-- Use station nodes, not the division root's display name or ID. If divisions are nested, continue through their `Children` arrays.
+Select station nodes rather than the division root. Use `StationNo` rather than `ObjId` for `StationSns`.
 
-Query by station number (recommended for the first request):
+## Station details and sensor data
 
-```json
-{
-  "Token": "YOUR_ACCESS_TOKEN",
-  "StationSns": ["800"],
-  "Begin": 1790697600,
-  "End": 1790699400
-}
-```
+Retrieve station metadata, sensor metadata, latest readings, historical samples and alarm-related fields for matching stations.
 
-Alternatively, replace `StationSns` with `"StationNms": ["No.1 Water Supply Station"]`. If you send both filters, the station must match both. Keep each number associated with its corresponding name when selecting stations.
-
-<a id="station-data"></a>
-## /hd/station/detaillist.json
-
-### Purpose
-
-Retrieve station metadata, sensor metadata, latest readings, historical readings for a period, and alarm-related fields for matching stations.
-
-For your first integration, query one station by number and read its sensor history. Latest readings and historical samples are separate parts of the response.
-
-### Signature
-
-```text
-POST http://175.138.67.155:7077/hd/station/detaillist.json
+```http
+POST /hd/station/detaillist.json
 Content-Type: application/json
 ```
 
-### Body
+### Request parameters
 
 | Parameter | Required | JSON type | Description |
-|---|---|---|---|
-| `Token` | Yes | string | `Response.Token` from authentication; send in this JSON body. |
-| `StationSns` | No | array of strings | Exact station-number filter, for example `["800"]`. Use station numbers, not station object IDs. |
-| `StationNms` | No | array of strings | Exact station-name filter. If both filters are supplied, the station must match both. |
-| `StationSns` | No | array of strings | Exact station-number filter, for example `["800"]`. Obtain values from station-tree nodes' `StationNo`; do not use `ObjId`. |
-| `StationNms` | No | array of strings | Exact station-name filter. Obtain values from station-tree nodes' `Name`. If both filters are supplied, the station must match both. |
+| --- | --- | --- | --- |
+| `Token` | Yes | string | `Response.Token` returned by authentication. |
+| `StationSns` | No | array of strings | Exact station numbers from tree nodes' `StationNo`, for example `["800"]`. |
+| `StationNms` | No | array of strings | Exact station names from tree nodes' `Name`. |
 | `Begin` | Yes | integer | Query start timestamp in seconds. |
 | `End` | Yes | integer | Query end timestamp in seconds. |
 
-For your first request, use only `StationSns`. Supplying both filters can exclude a station whose name differs from its number. Both filters are optional in the source, but omitted/empty-filter behavior is not documented; do not assume this lists all stations.
-For your first request, use only `StationSns`. If supplying both filters, use the selected station's actual number and name; copying its number into the name filter can exclude the station. Both filters are optional in the source, but omitted/empty-filter behavior is not documented; do not assume this lists all stations.
+Use a start time earlier than the end time. If both station filters are supplied, a station must match both; use its actual number and name. Behavior for omitted or empty filters is unspecified.
 
-Use a start time earlier than the end time. Maximum duration, boundary inclusivity, record limits, pagination and ordering are unspecified. 
-
-### Return value
+### Response structure
 
 ```text
 Response
@@ -274,8 +242,8 @@ Response
 ```
 
 | Field path | JSON type | Description |
-|---|---|---|
-| `Response.Total` | integer | Number of matched stations; pagination semantics are unspecified. |
+| --- | --- | --- |
+| `Response.Total` | integer | Number of matched stations. |
 | `Response.Data` | array of objects | Station results. |
 | `Response.Data[].Station` | object | Station metadata. |
 | `Response.Data[].Sensors` | array of objects | Sensors, readings and alarm-related fields. |
@@ -283,48 +251,56 @@ Response
 | `Response.Data[].Group` | integer | Station group identifier. |
 | `Response.Data[].TimeStamp` | integer | Latest station-data timestamp. |
 
+### Station fields
+
 Fields inside `Response.Data[].Station`:
 
 | Field | JSON type | Description |
-|---|---|---|
-| `Id` | string | Unique station ID; different from the station number used in `StationSns`. |
+| --- | --- | --- |
+| `Id` | string | Unique station ID. |
 | `Name` | string | Station name, used by `StationNms`. |
-| `Sn` | string | Station number, used by `StationSns`. |
+| `Sn` | string | Station number, used by `StationSns`; corresponds to tree-node `StationNo`. |
 | `Ty` | integer | Station type code; enum values are unspecified. |
 | `TyName` | string | Station type name. |
 | `TimeStamp` | integer | Latest data timestamp. |
 | `Time` | string | Display time; timezone and complete format are unspecified. |
 | `Position` | object | Station coordinates. |
-| `Position.Lat` | string | Latitude, represented as a string in the source. |
-| `Position.Lng` | string | Longitude, represented as a string in the source. |
+| `Position.Lat` | string | Latitude, represented as a string in this endpoint. |
+| `Position.Lng` | string | Longitude, represented as a string in this endpoint. |
+
+### Sensor fields
 
 Fields inside `Response.Data[].Sensors[]`:
 
 | Field | JSON type | Description |
-|---|---|---|
+| --- | --- | --- |
 | `Id` | string | Sensor identifier. |
 | `ObjId` | string | Sensor object identifier. The example matches `Id`; equality is not guaranteed. |
 | `Name` | string | Sensor name. |
-| `Unit` | string | Measurement unit. `m³` describes volume, not a flow rate. |
+| `Unit` | string | Measurement unit. `m³` represents volume. |
 | `Dp` | integer | Number of decimal places. |
 | `Time` | integer | Timestamp of the latest reading. |
 | `Value` | number | Latest sensor reading. |
-| `DType` | string | Sensor data-type code; the source example is `SJLJ`. Full enum unspecified. |
+| `DType` | string | Sensor data-type code; the example uses `SJLJ`. Full enum is unspecified. |
 | `Vals` | array of objects | Historical readings for the query period. |
 | `Vals[].Time` | integer | Historical sample timestamp. |
-| `Vals[].Val` | number | Historical sample value. Note `Val`, not `Value`. |
+| `Vals[].Val` | number | Historical sample value. The field name differs from the latest reading's `Value`. |
 
-### Example
+### Example request
 
-Request station `800` for a 1,800-second period. Replace the station number with one available to your account. If Unix seconds are confirmed, this interval is 2026-09-29 16:00–16:30 UTC.
+Query station `800` for a 1,800-second interval. Replace the number with one available to your account.
 
-```sh
+```bash
 curl --request POST 'http://175.138.67.155:7077/hd/station/detaillist.json' \
   --header 'Content-Type: application/json' \
   --data '{"Token":"YOUR_ACCESS_TOKEN","StationSns":["800"],"Begin":1790697600,"End":1790699400}'
 ```
 
-Illustrative response showing core reading fields. Other fields are intentionally omitted from this example; the API has not been changed to remove them.
+Alternatively, replace `StationSns` with `"StationNms": ["No.1 Water Supply Station"]`.
+
+### Example response
+
+This example shows core reading fields; additional metadata and alarm fields are omitted for readability.
 
 ```json
 {
@@ -337,7 +313,6 @@ Illustrative response showing core reading fields. Other fields are intentionall
       {
         "Station": {
           "Id": "EXAMPLE_STATION_ID",
-          "Name": "800",
           "Name": "No.1 Water Supply Station",
           "Sn": "800",
           "Ty": 808,
@@ -369,37 +344,44 @@ Illustrative response showing core reading fields. Other fields are intentionall
 }
 ```
 
-How to read this result:
-
-- `Response.Total = 1`: one station matches the filter.
-- `Station.Sn = "800"`: identifies the station.
-- `Sensors[0].Name = "Net Totalizer"`, with `Unit = "m³"`: identifies the measurement and unit.
-- `Sensors[0].Value = 851.877`: latest reading, associated with `Sensors[0].Time`.
-- `Sensors[0].Vals`: two historical samples, both strictly inside the query interval. This avoids assuming inclusive boundaries.
+The result contains one station (`Sn = "800"`). Its sensor's latest value is `851.877 m³`, associated with `Sensors[0].Time`. `Vals` contains two historical samples strictly inside the requested interval; this example does not establish boundary inclusivity.
 
 ## Alarm fields and additional metadata
 
-These fields are secondary to the basic history integration. This rewrite does not remove them from the API.
+### Alarm fields
 
 Fields inside `Response.Data[].Sensors[]`:
 
 | Field | JSON type | Description |
-|---|---|---|
+| --- | --- | --- |
 | `AlarmType` | string | Alarm type name. |
 | `Alarm_r` | integer | Recovery flag: `0` = not recovered; `1` = recovered. |
 | `STime` | integer | Alarm start timestamp. |
 | `Ref` | number | Alarm threshold reference value. |
-| `Level` | integer | Alarm level; severity mapping unspecified. |
+| `Level` | integer | Alarm level; severity mapping is unspecified. |
 | `Confirmed` | integer | `0` = unconfirmed; `1` = confirmed. |
 | `Dispatch` | integer | Work-order dispatch flag: `0` = no; `1` = yes. |
 
-The source does not define how to determine whether an alarm currently exists. Do not treat `Alarm_r = 0` alone as proof of an active alarm.
+The source does not define how to identify an active alarm. `Alarm_r = 0` alone does not establish that an alarm currently exists.
 
-The original example includes the following additional fields without sufficient definitions. Presence in a sample does not establish a required field, default, complete type or stable enum. Request definitions if your integration needs them.
+### Additional fields
 
-| Object | Additional fields observed in the original example |
-|---|---|
+The source lists these fields without sufficient definitions. Their presence in an example does not establish requiredness, defaults, complete types or stable enums.
+
+| Object | Additional fields |
+| --- | --- |
 | `Divisions[]` | `dt`, `Id`, `Weight`, `Name` |
 | `Sensors[]` | `SType`, `MN`, `MX`, `Weight`, `Type`, `Alarm_t`, `Alarm_v`, `ConfirmInfo`, `Gdbh`, `Title`, `isShowDL`, `bgbj_id`, `Group`, `GroupNm`, `extend_sns`, `Lastycolor`, `Befcolor`, `dltime`, `Lastmcolor`, `At`, `Count`, `Curcolor`, `VType`, `Yescolor`, `Gd` |
 | `Sensors[].Vals[]` | `qval`, `yval`, `lval`, `Report`, `mval` |
 | `Station` | `USN`, `NoiseSbbh`, `Fav`, `Weight`, `KWeight`, `Diam`, `No`, `AZWZ`, `PId`, `Sjgs`, `Tl`, `Zoom`, `GID`, `Dp`, `DpName`, `Pic`, `State`, `Glzd`, `Im` |
+
+## Items to confirm with HEDA
+
+| Area | Open questions |
+| --- | --- |
+| Authentication | Deployment-specific `Aid`: the source mentions both `Uniscada` and `scada`. Token lifetime and timestamp epoch. Meaning of the returned `UserName`. |
+| Station tree | HTTP method; default root when `Type` or `ObjId` is omitted; supported node types; `EndType` pruning rules; polygon validation and closure rules. |
+| Data queries | Omitted/empty-filter behavior; maximum query duration; boundary inclusivity; record limits; pagination; result ordering. |
+| Timestamps | Epoch/timezone for numeric timestamps and display-time format/timezone. |
+| Errors | Error codes, HTTP status behavior and error payload schema. |
+| Metadata and alarms | Type/data-type enums; alarm severity and active-alarm rules; definitions for additional fields. |
