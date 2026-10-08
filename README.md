@@ -7,11 +7,11 @@ The HEDA API provides station information, latest sensor readings and historical
 | Method | Endpoint | Purpose |
 |---|---|---|
 | POST | [/hd/user/auth.json](#authentication) | Obtain an access token. |
-| POST | [/station/detaillist.json](#station-data) | Retrieve station details and sensor data for a time range. |
+| POST | [/hd/station/tree.json](#station-tree) | Discover station numbers and names from the station tree. |
+| POST | [/hd/station/detaillist.json](#station-data) | Retrieve station details and sensor data for a time range. |
 
 ## Getting started
-
-Ask HEDA for your customer ID (`Cid`), application ID (`Aid`), username, password and permitted station numbers. No separate station-discovery endpoint is defined in the source documentation.
+Ask HEDA for your customer ID (`Cid`), application ID (`Aid`), username and password. After authentication, use `/hd/station/tree.json` to discover station numbers and names for subsequent data queries. If querying a specific subtree, obtain its root node type and ID from HEDA.
 
 Base URL for the documented deployment:
 
@@ -21,12 +21,12 @@ http://175.138.67.155:7077
 
 Send JSON with `Content-Type: application/json`. Preserve field spelling and capitalization.
 
-1. Call `user/auth.json` with your credentials.
+1. Call `/hd/user/auth.json` with your credentials.
 2. Check `Code` and `Success`, then copy `Response.Token`.
-3. Call `station/detaillist.json`, placing that token in the JSON-body field `Token`.
-4. Read `Response.Data[].Sensors[].Vals[]` for historical samples. Each sample contains `Time` and `Val`; the sensor's `Unit` supplies the measurement unit.
-
-HEDA uses a body token in this documented workflow. Do not substitute Ovarro's Bearer-header convention.
+3. Call `/hd/station/tree.json` with the token. Traverse `Response.Children` recursively and select station nodes (`Type = "STATION"`).
+4. Copy a selected station node's `StationNo` into `StationSns`, or its `Name` into `StationNms`. Both query parameters are arrays of strings.
+5. Call `/hd/station/detaillist.json` with the same JSON-body `Token`, your selected station filter and the required time range.
+6. Read `Response.Data[].Sensors[].Vals[]` for historical samples. Each sample contains `Time` and `Val`; the sensor's `Unit` supplies the measurement unit.
 
 Examples contain placeholders and illustrative data, not live API captures. Replace all `YOUR_...` values before use. cURL examples use POSIX shell line continuations; other clients can use the same URL, header and JSON body.
 
@@ -37,9 +37,12 @@ Examples contain placeholders and illustrative data, not live API captures. Repl
 | `Code` | integer | Application result: `0` = success; non-zero = error. This is not the HTTP status code. |
 | `Success` | boolean | `true` = success; `false` = failure. |
 | `Message` | string | Result description; success examples use `OK`. |
+| `Success` | boolean | Included in the authentication and detail examples: `true` = success; `false` = failure. Not included in the supplied tree response. |
+| `Message` | string | Result description; authentication/detail examples use `OK`, while the tree example uses an empty string. |
 | `Response` | object | Endpoint-specific success payload. Error payload structure is not specified. |
 
 Process a response as successful when `Code` is `0` and `Success` is `true`. Treat disagreement as an unexpected response.
+For authentication and detail queries, process a response as successful when `Code` is `0` and `Success` is `true`. For the tree query, check `Code = 0`; its supplied response does not include `Success`. If `Success` is present and contradicts `Code`, treat the response as unexpected.
 
 `Begin`, `End` and token expiry `Exp` are documented as timestamps in **seconds**, not milliseconds. The original document does not explicitly specify the epoch or the units of every response time field. Confirm the Unix-seconds interpretation and response timestamp units with HEDA before production use. If Unix seconds are confirmed, convert UTC instants to seconds and apply a timezone only for display.
 
@@ -111,10 +114,147 @@ Illustrative response:
 }
 ```
 
-Use `Response.Token`, not `Response.Uid`, as the credential. If the service reports an expired or invalid token, authenticate again. Do not assume Ovarro's token lifetime applies here.
+Use `Response.Token`, not `Response.Uid`, as the credential. If the service reports an expired or invalid token, authenticate again.
+
+<a id="station-tree"></a>
+## /hd/station/tree.json
+
+### Purpose
+
+Query a hierarchical tree of divisions, stations and equipment nodes. Use the returned station nodes to obtain the filters needed by `station/detaillist.json`:
+
+| Selected station-node field | Subsequent query parameter | Example |
+|---|---|---|
+| `StationNo` | `StationSns` | `"800"` → `["800"]` |
+| `Name` | `StationNms` | `"No.1 Water Supply Station"` → `["No.1 Water Supply Station"]` |
+
+The JSON field is **`Name`**, with an uppercase `N`, as shown in the supplied schema and example. `ObjId` identifies a tree node; do not substitute it for `StationNo` when constructing `StationSns`.
+
+### Signature
+
+```text
+Endpoint: http://175.138.67.155:7077/hd/station/tree.json
+Content-Type: application/json
+```
+
+The supplied specification includes a JSON request body but does not state the HTTP method. Confirm the method with HEDA before sending this request.
+
+### Body
+
+| Parameter | Required | JSON type | Description |
+|---|---|---|---|
+| `Token` | Yes | string | Access token returned by authentication. |
+| `Type` | No | string | Type of the root node used as the query entry, for example `DIVISION`. |
+| `ObjId` | No | string | Unique ID of the root entry node, for example `DIV_001`. |
+| `EndType` | No | string | Terminal node-type filter, for example `STATION`. |
+
+Default root behavior when `Type` or `ObjId` is omitted, supported type values and the exact pruning behavior of `EndType` are not specified. The following request illustrates a known division root with stations as the terminal type.
+
+### Return value
+
+`Response` is a root node object, not an array. Each node can contain a `Children` array of nodes with the same structure.
+
+| Node field | JSON type | Description |
+|---|---|---|
+| `Type` | string | Node classification; examples include `DIVISION` and `STATION`. |
+| `Name` | string | Node display name. For a station node, use this in `StationNms`. |
+| `StationNo` | string | Station number. For a station node, use this in `StationSns`. Availability on non-station nodes is unspecified. |
+| `ObjId` | string | Unique node ID. |
+| `Position` | object | Node center coordinates. |
+| `Position.Lng` | number | Longitude, represented as a JSON number in this endpoint. |
+| `Position.Lat` | number | Latitude, represented as a JSON number in this endpoint. |
+| `Area` | array of objects | Coverage-area polygon coordinates; each entry contains numeric `Lng` and `Lat`. |
+| `Children` | array of objects | Child nodes; traverse recursively to find stations beneath nested divisions. |
+
+### Example
+
+Request body (replace the illustrative root ID with a valid one for your account):
+
+```json
+{
+  "Token": "YOUR_ACCESS_TOKEN",
+  "Type": "DIVISION",
+  "ObjId": "DIV_001",
+  "EndType": "STATION"
+}
+```
+
+Illustrative response. `StationNo` is included on the child station so the example can be used for the next query. `Area` retains the source's abbreviated coordinate example; polygon validation and closure rules are not specified.
+
+```json
+{
+  "Code": 0,
+  "Response": {
+    "Type": "DIVISION",
+    "Name": "East Operation Zone",
+    "ObjId": "DIV_001",
+    "Position": {"Lng": 120.123456, "Lat": 30.654321},
+    "Area": [
+      {"Lng": 120.123, "Lat": 30.654},
+      {"Lng": 120.125, "Lat": 30.656}
+    ],
+    "Children": [
+      {
+        "Type": "STATION",
+        "Name": "No.1 Water Supply Station",
+        "StationNo": "800",
+        "ObjId": "STA_001",
+        "Position": {"Lng": 120.124, "Lat": 30.655},
+        "Area": [],
+        "Children": []
+      }
+    ]
+  },
+  "Message": ""
+}
+```
+
+### Use the station in a data query
+
+From the example above:
+
+- `Response.Children[0].StationNo` supplies `StationSns: ["800"]`.
+- `Response.Children[0].Name` supplies `StationNms: ["No.1 Water Supply Station"]`.
+- Use station nodes, not the division root's display name or ID. If divisions are nested, continue through their `Children` arrays.
+
+Query by station number (recommended for the first request):
+
+```json
+{
+  "Token": "YOUR_ACCESS_TOKEN",
+  "StationSns": ["800"],
+  "Begin": 1790697600,
+  "End": 1790699400
+}
+```
+
+Alternatively, replace `StationSns` with `"StationNms": ["No.1 Water Supply Station"]`. If you send both filters, the station must match both. Keep each number associated with its corresponding name when selecting stations.
+
+Example JavaScript for collecting station choices from parsed tree JSON (`treeResult`):
+
+```js
+if (treeResult.Code !== 0 || treeResult.Success === false) {
+  throw new Error(treeResult.Message || "HEDA station-tree request failed");
+}
+const stations = [];
+function visit(node) {
+  if (!node || typeof node !== "object") return;
+  if (node.Type === "STATION") {
+    stations.push({ StationNo: node.StationNo, Name: node.Name });
+  }
+  for (const child of Array.isArray(node.Children) ? node.Children : []) {
+    visit(child);
+  }
+}
+visit(treeResult.Response);
+// Select the desired station(s) from this list before building a data request.
+console.log(stations);
+```
+
+If a selected station lacks `StationNo`, do not use its `ObjId` as a replacement; use its valid `Name` filter or confirm the station number with HEDA. Do not send an empty filter when no station was selected.
 
 <a id="station-data"></a>
-## /station/detaillist.json
+## /hd/station/detaillist.json
 
 ### Purpose
 
@@ -134,14 +274,17 @@ Content-Type: application/json
 | Parameter | Required | JSON type | Description |
 |---|---|---|---|
 | `Token` | Yes | string | `Response.Token` from authentication; send in this JSON body. |
-| `StationSns` | No | array of strings | Exact station-number filter, for example `["800"]`. Use station numbers or station name, not station object IDs. |
+| `StationSns` | No | array of strings | Exact station-number filter, for example `["800"]`. Use station numbers, not station object IDs. |
 | `StationNms` | No | array of strings | Exact station-name filter. If both filters are supplied, the station must match both. |
+| `StationSns` | No | array of strings | Exact station-number filter, for example `["800"]`. Obtain values from station-tree nodes' `StationNo`; do not use `ObjId`. |
+| `StationNms` | No | array of strings | Exact station-name filter. Obtain values from station-tree nodes' `Name`. If both filters are supplied, the station must match both. |
 | `Begin` | Yes | integer | Query start timestamp in seconds. |
 | `End` | Yes | integer | Query end timestamp in seconds. |
 
 For your first request, use only `StationSns`. Supplying both filters can exclude a station whose name differs from its number. Both filters are optional in the source, but omitted/empty-filter behavior is not documented; do not assume this lists all stations.
+For your first request, use only `StationSns`. If supplying both filters, use the selected station's actual number and name; copying its number into the name filter can exclude the station. Both filters are optional in the source, but omitted/empty-filter behavior is not documented; do not assume this lists all stations.
 
-Use a start time earlier than the end time. Maximum duration, boundary inclusivity, record limits, pagination and ordering are unspecified. Ovarro's eight-day limit is not a documented HEDA limit.
+Use a start time earlier than the end time. Maximum duration, boundary inclusivity, record limits, pagination and ordering are unspecified. 
 
 ### Return value
 
@@ -225,6 +368,7 @@ Illustrative response showing core reading fields. Other fields are intentionall
         "Station": {
           "Id": "EXAMPLE_STATION_ID",
           "Name": "800",
+          "Name": "No.1 Water Supply Station",
           "Sn": "800",
           "Ty": 808,
           "TyName": "HD86Q",
@@ -329,4 +473,6 @@ Numeric error codes, HTTP error mappings and example error bodies are unspecifie
 - Query boundaries, maximum interval, result limits, pagination and ordering.
 - Omitted/empty filters, no-match/no-history responses and nullable fields.
 - Token lifetime, error-code definitions and station discovery if required.
+- Token lifetime and error-code definitions.
+- Tree-query HTTP method, default root selection and supported node types.
 - Approved deployment URL and HTTPS availability; the source specifies HTTP only.
