@@ -330,7 +330,3 @@ Numeric error codes, HTTP error mappings and example error bodies are unspecifie
 - Omitted/empty filters, no-match/no-history responses and nullable fields.
 - Token lifetime, error-code definitions and station discovery if required.
 - Approved deployment URL and HTTPS availability; the source specifies HTTP only.
-
-## Documentation basis
-
-This rewrites the two interfaces in [the original HEDA documentation](https://github.com/yuanjoe27-sys/HEDA/tree/81978dc9e500b5b882be3f4ed400b0a1fbc009a3). Organization follows the purpose/signature/return-value/example pattern of [the Ovarro reference](https://github.com/Ovarro/XilogApiDocs#flowloggerall), while preserving HEDA paths and field names. No live API requests were made to validate service behavior.
