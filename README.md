@@ -121,7 +121,7 @@ Use `Response.Token`, not `Response.Uid`, as the credential. If the service repo
 
 ### Purpose
 
-Query a hierarchical tree of divisions, stations and equipment nodes. Use the returned station nodes to obtain the filters needed by `station/detaillist.json`:
+Query a hierarchical tree of divisions, stations and equipment nodes. Use the returned station nodes to obtain the filters needed by `/hd/station/detaillist.json`:
 
 | Selected station-node field | Subsequent query parameter | Example |
 |---|---|---|
