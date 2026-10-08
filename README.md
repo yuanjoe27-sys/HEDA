@@ -134,7 +134,7 @@ Content-Type: application/json
 | Parameter | Required | JSON type | Description |
 |---|---|---|---|
 | `Token` | Yes | string | `Response.Token` from authentication; send in this JSON body. |
-| `StationSns` | No | array of strings | Exact station-number filter, for example `["800"]`. Use station numbers, not station object IDs. |
+| `StationSns` | No | array of strings | Exact station-number filter, for example `["800"]`. Use station numbers or station name, not station object IDs. |
 | `StationNms` | No | array of strings | Exact station-name filter. If both filters are supplied, the station must match both. |
 | `Begin` | Yes | integer | Query start timestamp in seconds. |
 | `End` | Yes | integer | Query end timestamp in seconds. |
