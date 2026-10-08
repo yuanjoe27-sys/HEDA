@@ -223,29 +223,6 @@ Query by station number (recommended for the first request):
 
 Alternatively, replace `StationSns` with `"StationNms": ["No.1 Water Supply Station"]`. If you send both filters, the station must match both. Keep each number associated with its corresponding name when selecting stations.
 
-Example JavaScript for collecting station choices from parsed tree JSON (`treeResult`):
-
-```js
-if (treeResult.Code !== 0 || treeResult.Success === false) {
-  throw new Error(treeResult.Message || "HEDA station-tree request failed");
-}
-const stations = [];
-function visit(node) {
-  if (!node || typeof node !== "object") return;
-  if (node.Type === "STATION") {
-    stations.push({ StationNo: node.StationNo, Name: node.Name });
-  }
-  for (const child of Array.isArray(node.Children) ? node.Children : []) {
-    visit(child);
-  }
-}
-visit(treeResult.Response);
-// Select the desired station(s) from this list before building a data request.
-console.log(stations);
-```
-
-If a selected station lacks `StationNo`, do not use its `ObjId` as a replacement; use its valid `Name` filter or confirm the station number with HEDA. Do not send an empty filter when no station was selected.
-
 <a id="station-data"></a>
 ## /hd/station/detaillist.json
 
@@ -400,25 +377,6 @@ How to read this result:
 - `Sensors[0].Value = 851.877`: latest reading, associated with `Sensors[0].Time`.
 - `Sensors[0].Vals`: two historical samples, both strictly inside the query interval. This avoids assuming inclusive boundaries.
 
-A latest reading is not a substitute for history. Do not assume it is the last sample of any requested historical period. Iterate both arrays for multiple stations and sensors.
-
-Example JavaScript parsing logic, after receiving parsed JSON as `result`:
-
-```js
-if (result.Code !== 0 || result.Success !== true) {
-  throw new Error(result.Message || "HEDA request failed");
-}
-for (const item of result.Response.Data) {
-  for (const sensor of item.Sensors) {
-    for (const sample of sensor.Vals) {
-      console.log(item.Station.Sn, sensor.Id, sample.Time, sample.Val, sensor.Unit);
-    }
-  }
-}
-```
-
-This illustrates the documented success shape. Confirm missing-field and null behavior before building production parsing logic. Do not convert missing/null readings into zero.
-
 ## Alarm fields and additional metadata
 
 These fields are secondary to the basic history integration. This rewrite does not remove them from the API.
@@ -445,16 +403,3 @@ The original example includes the following additional fields without sufficient
 | `Sensors[]` | `SType`, `MN`, `MX`, `Weight`, `Type`, `Alarm_t`, `Alarm_v`, `ConfirmInfo`, `Gdbh`, `Title`, `isShowDL`, `bgbj_id`, `Group`, `GroupNm`, `extend_sns`, `Lastycolor`, `Befcolor`, `dltime`, `Lastmcolor`, `At`, `Count`, `Curcolor`, `VType`, `Yescolor`, `Gd` |
 | `Sensors[].Vals[]` | `qval`, `yval`, `lval`, `Report`, `mval` |
 | `Station` | `USN`, `NoiseSbbh`, `Fav`, `Weight`, `KWeight`, `Diam`, `No`, `AZWZ`, `PId`, `Sjgs`, `Tl`, `Zoom`, `GID`, `Dp`, `DpName`, `Pic`, `State`, `Glzd`, `Im` |
-
-## Troubleshooting
-
-| Symptom | What to check |
-|---|---|
-| Authentication fails | Confirm `Cid`, deployment-specific `Aid`, username and password. |
-| Non-zero `Code` or `Success = false` | Inspect `Message`; check fields, permissions and token validity. |
-| Invalid or expired token | Authenticate again and replace the JSON-body `Token`. |
-| Station not returned | Check station number, exact spelling and account permissions. If both filters are supplied, check their intersection. |
-| Missing/unexpected history | Check timestamp units, interval and sensor `Vals`; a latest reading does not guarantee history for the interval. |
-| HTTP/connection error or non-JSON response | Check deployment URL and HTTP response before parsing the application result. |
-
-Numeric error codes, HTTP error mappings and example error bodies are unspecified in the source and are not invented here.
