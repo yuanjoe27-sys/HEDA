@@ -41,13 +41,6 @@ Examples contain placeholders and illustrative data, not live API captures. Repl
 | `Message` | string | Result description; authentication/detail examples use `OK`, while the tree example uses an empty string. |
 | `Response` | object | Endpoint-specific success payload. Error payload structure is not specified. |
 
-Process a response as successful when `Code` is `0` and `Success` is `true`. Treat disagreement as an unexpected response.
-For authentication and detail queries, process a response as successful when `Code` is `0` and `Success` is `true`. For the tree query, check `Code = 0`; its supplied response does not include `Success`. If `Success` is present and contradicts `Code`, treat the response as unexpected.
-
-`Begin`, `End` and token expiry `Exp` are documented as timestamps in **seconds**, not milliseconds. The original document does not explicitly specify the epoch or the units of every response time field. Confirm the Unix-seconds interpretation and response timestamp units with HEDA before production use. If Unix seconds are confirmed, convert UTC instants to seconds and apply a timezone only for display.
-
-`Station.Time` is a display string (the original example is `09-24 14:00`). Its timezone and complete format are unspecified; do not use it to construct query boundaries.
-
 <a id="authentication"></a>
 ## /hd/user/auth.json
 
@@ -465,14 +458,3 @@ The original example includes the following additional fields without sufficient
 | HTTP/connection error or non-JSON response | Check deployment URL and HTTP response before parsing the application result. |
 
 Numeric error codes, HTTP error mappings and example error bodies are unspecified in the source and are not invented here.
-
-## Deployment details to confirm
-
-- Correct `Aid`: the previous document conflicts between `Uniscada` and `scada`.
-- Timestamp epoch, units of all response time fields, and display timezone.
-- Query boundaries, maximum interval, result limits, pagination and ordering.
-- Omitted/empty filters, no-match/no-history responses and nullable fields.
-- Token lifetime, error-code definitions and station discovery if required.
-- Token lifetime and error-code definitions.
-- Tree-query HTTP method, default root selection and supported node types.
-- Approved deployment URL and HTTPS availability; the source specifies HTTP only.
