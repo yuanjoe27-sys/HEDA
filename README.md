@@ -1,64 +1,98 @@
-# HEDA Open API Specification Document
+# HEDA Data Access API
 
-## Document Overview
+The HEDA API provides station information, latest sensor readings and historical data. Obtain a token first, then use that token to query station data.
 
-This document is the open API documentation for the Station Data Query System. It covers two core interfaces: user authentication/login and station detail with historical data query. It standardizes the request URL, request parameters, response fields, and data samples for front-end and back-end development and integration debugging.
+## Methods
 
-### General Conventions
-
-- Protocol: HTTP
-- Data Format: JSON
-- Time Format: uniformly using
-- Status Code Rule: `Code=0` indicates success; non-zero indicates an error
-
-## 1. User Authentication API
-
-### 1.1 Interface Basic Information
-
-| Item | Content |
-|---|---|
-| Interface Name | User Authentication / Login |
-| Request URL | `http://175.138.67.155:7077/hd/user/auth.json` |
-| Request Method | `POST` |
-| Description | Authenticate the user using Customer ID, Application ID, and account credentials to obtain a global access Token, which is required for all subsequent business interfaces. |
-
-### 1.2 Request Parameters (Body JSON)
-
-| Parameter | Required | Type | Description |
-|---|---|---|---|
-| `Cid` | Yes | String | Unique Customer ID |
-| `Aid` | Yes | String | Unique Application ID, fixed value: `Uniscada` |
-| `UserName` | Yes | String | Login username |
-| `Password` | Yes | String | Login password |
-
-### 1.3 Response Parameters
-
-| Parameter | Type | Description |
+| Method | Endpoint | Purpose |
 |---|---|---|
-| `Code` | Int | Status code: 0=success, non-zero=error |
-| `Success` | Boolean | Request result: true=success, false=failure |
-| `Message` | String | Result description; defaults to `"OK"` on success |
-| `Response` | Object | Authentication data payload |
-| `Response.Token` | String | Access credential; required for all subsequent business interfaces |
-| `Response.Aid` | String | Application ID of the current authenticated session |
-| `Response.Cid` | String | Customer ID of the current logged-in user |
-| `Response.Uid` | String | Unique User ID |
-| `Response.UserName` | String | Real name of the user |
-| `Response.Ext` | String | Extension field; defaults to `null` |
-| `Response.Exp` | Long | Token expiry timestamp (seconds) |
+| POST | [user/auth.json](#authentication) | Obtain an access token. |
+| POST | [station/detaillist.json](#station-data) | Retrieve station details and sensor data for a time range. |
 
-### 1.4 Request Example
+## Getting started
 
-```json
-{
-  "Cid": "673fdc7c421aa91379b266d8",
-  "Aid": "scada",
-  "UserName": "API",
-  "Password": "Api2026!"
-}
+Ask HEDA for your customer ID (`Cid`), application ID (`Aid`), username, password and permitted station numbers. No separate station-discovery endpoint is defined in the source documentation.
+
+Base URL for the documented deployment:
+
+```text
+http://175.138.67.155:7077/hd
 ```
 
-### 1.5 Response Example
+Send JSON with `Content-Type: application/json`. Preserve field spelling and capitalization.
+
+1. Call `user/auth.json` with your credentials.
+2. Check `Code` and `Success`, then copy `Response.Token`.
+3. Call `station/detaillist.json`, placing that token in the JSON-body field `Token`.
+4. Read `Response.Data[].Sensors[].Vals[]` for historical samples. Each sample contains `Time` and `Val`; the sensor's `Unit` supplies the measurement unit.
+
+HEDA uses a body token in this documented workflow. Do not substitute Ovarro's Bearer-header convention.
+
+Examples contain placeholders and illustrative data, not live API captures. Replace all `YOUR_...` values before use. cURL examples use POSIX shell line continuations; other clients can use the same URL, header and JSON body.
+
+## Common conventions
+
+| Response field | JSON type | Meaning |
+|---|---|---|
+| `Code` | integer | Application result: `0` = success; non-zero = error. This is not the HTTP status code. |
+| `Success` | boolean | `true` = success; `false` = failure. |
+| `Message` | string | Result description; success examples use `OK`. |
+| `Response` | object | Endpoint-specific success payload. Error payload structure is not specified. |
+
+Process a response as successful when `Code` is `0` and `Success` is `true`. Treat disagreement as an unexpected response.
+
+`Begin`, `End` and token expiry `Exp` are documented as timestamps in **seconds**, not milliseconds. The original document does not explicitly specify the epoch or the units of every response time field. Confirm the Unix-seconds interpretation and response timestamp units with HEDA before production use. If Unix seconds are confirmed, convert UTC instants to seconds and apply a timezone only for display.
+
+`Station.Time` is a display string (the original example is `09-24 14:00`). Its timezone and complete format are unspecified; do not use it to construct query boundaries.
+
+<a id="authentication"></a>
+## user/auth.json
+
+### Purpose
+
+Authenticate using your customer ID, application ID and credentials. Returns the token required for station-data requests.
+
+### Signature
+
+```text
+POST http://175.138.67.155:7077/hd/user/auth.json
+Content-Type: application/json
+```
+
+### Body
+
+| Parameter | Required | JSON type | Description |
+|---|---|---|---|
+| `Cid` | Yes | string | Customer ID supplied by HEDA. |
+| `Aid` | Yes | string | Application ID supplied by HEDA. Confirm the deployment value: the previous table says `Uniscada`, but its examples use `scada`. |
+| `UserName` | Yes | string | Integration account username. |
+| `Password` | Yes | string | Integration account password. |
+
+### Return value
+
+The common response envelope contains:
+
+| Field | JSON type | Description |
+|---|---|---|
+| `Response.Token` | string | Access token for subsequent request bodies. |
+| `Response.Aid` | string | Application ID of the authenticated session. |
+| `Response.Cid` | string | Customer ID of the authenticated session. |
+| `Response.Uid` | string | User ID. |
+| `Response.UserName` | string | Returned user name; the source describes it as the user's real name. |
+| `Response.Ext` | string or null | Extension field; the source example contains `null`. |
+| `Response.Exp` | integer | Token-expiry timestamp in seconds. A fixed lifetime is not documented. |
+
+### Example
+
+Request:
+
+```sh
+curl --request POST 'http://175.138.67.155:7077/hd/user/auth.json' \
+  --header 'Content-Type: application/json' \
+  --data '{"Cid":"YOUR_CUSTOMER_ID","Aid":"YOUR_APPLICATION_ID","UserName":"YOUR_USERNAME","Password":"YOUR_PASSWORD"}'
+```
+
+Illustrative response:
 
 ```json
 {
@@ -66,104 +100,118 @@ This document is the open API documentation for the Station Data Query System. I
   "Success": true,
   "Message": "OK",
   "Response": {
-    "Token": "6a71b87ab7faa92fe0f3211a",
-    "Aid": "scada",
-    "Cid": "66de4c0c8c428f4730f6eb91",
-    "Uid": "6a71b82bb7faa92fe0f3210f",
-    "UserName": "API",
+    "Token": "YOUR_ACCESS_TOKEN",
+    "Aid": "YOUR_APPLICATION_ID",
+    "Cid": "YOUR_CUSTOMER_ID",
+    "Uid": "EXAMPLE_USER_ID",
+    "UserName": "YOUR_USERNAME",
     "Ext": null,
-    "Exp": 2736746291
+    "Exp": 1790704800
   }
 }
 ```
 
-## 2. Station Detail and Data Query API
+Use `Response.Token`, not `Response.Uid`, as the credential. If the service reports an expired or invalid token, authenticate again. Do not assume Ovarro's token lifetime applies here.
 
-### 2.1 Interface Basic Information
+<a id="station-data"></a>
+## station/detaillist.json
 
-| Item | Content |
-|---|---|
-| Interface Name | Station Detail and Time-range Data Query |
-| Request URL | `http://175.138.67.155:7077/hd/station/detaillist.json` |
-| Request Method | `POST` |
-| Description | Authenticated via Token; queries the basic information, sensor information, real-time data, time-range historical data, and alarm information of the specified stations. |
+### Purpose
 
-### 2.2 Request Parameters (Body JSON)
+Retrieve station metadata, sensor metadata, latest readings, historical readings for a period, and alarm-related fields for matching stations.
 
-| Parameter | Required | Type | Description |
-|---|---|---|---|
-| `Token` | Yes | String | Access credential obtained from the authentication interface |
-| `StationSns` | No | Array[String] | Array of station numbers for exact-match query |
-| `StationNms` | No | Array[String] | Array of station names for exact-match query; if both station numbers and names are provided, the intersection of results is returned |
-| `Begin` | Yes | Long | Query start time (second-level timestamp) |
-| `End` | Yes | Long | Query end time (second-level timestamp) |
+For your first integration, query one station by number and read its sensor history. Latest readings and historical samples are separate parts of the response.
 
-### 2.3 Response Parameters
+### Signature
 
-| Parameter | Type | Description |
-|---|---|---|
-| `Code` | Int | Status code: 0=success, non-zero=error |
-| `Success` | Boolean | Request result: true=success, false=failure |
-| `Message` | String | Result description |
-| `Response` | Object | Data payload |
-| `Response.Total` | Int | Total number of stations matched |
-| `Response.Data` | Array[Object] | List of station data |
-| `Data.Divisions` | Array[Object] | Station division information |
-| `Data.Sensors` | Array[Object] | List of station sensors, their data, and alarm information |
-| `Data.Station` | Object | Station basic information |
-| `Data.TimeStamp` | Long | Timestamp of the station's latest data |
-| `Data.Group` | Int | Station group identifier |
-
-#### 2.3.1 Station Object - Field Description
-
-| Parameter | Type | Description |
-|---|---|---|
-| `Id` | String | Unique station ID |
-| `Name` | String | Station name |
-| `Sn` | String | Station number |
-| `Ty` | Int | Station type code |
-| `TyName` | String | Station type name |
-| `TimeStamp` | Long | Timestamp of the latest data |
-| `Time` | String | Formatted time of the latest data |
-| `Position` | Object | Station coordinate information |
-| `Position.Lat` | String | Latitude |
-| `Position.Lng` | String | Longitude |
-
-#### 2.3.2 Sensors - Sensor and Alarm Data Field Description
-
-| Parameter | Type | Description |
-|---|---|---|
-| `Id/ObjId` | String | Unique sensor tag/identifier |
-| `Name` | String | Sensor name |
-| `Unit` | String | Measurement unit |
-| `Dp` | Int | Data precision (number of decimal places) |
-| `Time` | Long | Timestamp of the latest data |
-| `Value` | Float | Latest real-time value of the sensor |
-| `DType` | String | Sensor data type code |
-| `Vals` | Array[Object] | List of historical data within the queried time range |
-| `Vals.Val` | Float | Data value at a time point |
-| `Vals.Time` | Long | Timestamp corresponding to the data value |
-| `AlarmType` | String | Alarm type name |
-| `Alarm_r` | Int | Whether the alarm has recovered: 0=not recovered, 1=recovered |
-| `STime` | Long | Alarm start timestamp |
-| `Ref` | Float | Alarm threshold reference value |
-| `Level` | Int | Alarm level |
-| `Confirmed` | Int | Whether the alarm is confirmed: 0=not confirmed, 1=confirmed |
-| `Dispatch` | Int | Whether the alarm has been dispatched as a work order: 0=no, 1=yes |
-
-### 2.4 Request Example
-
-```json
-{
-  "Token": "6a71b87ab7faa92fe0f3211a",
-  "StationSns": ["800"],
-  "StationNms": ["800"],
-  "Begin": 1790697600,
-  "End": 1790699400
-}
+```text
+POST http://175.138.67.155:7077/hd/station/detaillist.json
+Content-Type: application/json
 ```
 
-### 2.5 Response Example
+### Body
+
+| Parameter | Required | JSON type | Description |
+|---|---|---|---|
+| `Token` | Yes | string | `Response.Token` from authentication; send in this JSON body. |
+| `StationSns` | No | array of strings | Exact station-number filter, for example `["800"]`. Use station numbers, not station object IDs. |
+| `StationNms` | No | array of strings | Exact station-name filter. If both filters are supplied, the station must match both. |
+| `Begin` | Yes | integer | Query start timestamp in seconds. |
+| `End` | Yes | integer | Query end timestamp in seconds. |
+
+For your first request, use only `StationSns`. Supplying both filters can exclude a station whose name differs from its number. Both filters are optional in the source, but omitted/empty-filter behavior is not documented; do not assume this lists all stations.
+
+Use a start time earlier than the end time. Maximum duration, boundary inclusivity, record limits, pagination and ordering are unspecified. Ovarro's eight-day limit is not a documented HEDA limit.
+
+### Return value
+
+```text
+Response
+├── Total                         Number of matched stations
+└── Data[]                        Station results
+    ├── Station                   Station identity and location
+    ├── Sensors[]                 Sensors belonging to this station
+    │   ├── Unit                  Measurement unit
+    │   ├── Time / Value          Latest reading
+    │   └── Vals[]                Historical samples
+    │       └── Time / Val        Sample timestamp and value
+    ├── Divisions[]               Division metadata
+    ├── Group                     Station group identifier
+    └── TimeStamp                 Latest station-data timestamp
+```
+
+| Field path | JSON type | Description |
+|---|---|---|
+| `Response.Total` | integer | Number of matched stations; pagination semantics are unspecified. |
+| `Response.Data` | array of objects | Station results. |
+| `Response.Data[].Station` | object | Station metadata. |
+| `Response.Data[].Sensors` | array of objects | Sensors, readings and alarm-related fields. |
+| `Response.Data[].Divisions` | array of objects | Division metadata. |
+| `Response.Data[].Group` | integer | Station group identifier. |
+| `Response.Data[].TimeStamp` | integer | Latest station-data timestamp. |
+
+Fields inside `Response.Data[].Station`:
+
+| Field | JSON type | Description |
+|---|---|---|
+| `Id` | string | Unique station ID; different from the station number used in `StationSns`. |
+| `Name` | string | Station name, used by `StationNms`. |
+| `Sn` | string | Station number, used by `StationSns`. |
+| `Ty` | integer | Station type code; enum values are unspecified. |
+| `TyName` | string | Station type name. |
+| `TimeStamp` | integer | Latest data timestamp. |
+| `Time` | string | Display time; timezone and complete format are unspecified. |
+| `Position` | object | Station coordinates. |
+| `Position.Lat` | string | Latitude, represented as a string in the source. |
+| `Position.Lng` | string | Longitude, represented as a string in the source. |
+
+Fields inside `Response.Data[].Sensors[]`:
+
+| Field | JSON type | Description |
+|---|---|---|
+| `Id` | string | Sensor identifier. |
+| `ObjId` | string | Sensor object identifier. The example matches `Id`; equality is not guaranteed. |
+| `Name` | string | Sensor name. |
+| `Unit` | string | Measurement unit. `m³` describes volume, not a flow rate. |
+| `Dp` | integer | Number of decimal places. |
+| `Time` | integer | Timestamp of the latest reading. |
+| `Value` | number | Latest sensor reading. |
+| `DType` | string | Sensor data-type code; the source example is `SJLJ`. Full enum unspecified. |
+| `Vals` | array of objects | Historical readings for the query period. |
+| `Vals[].Time` | integer | Historical sample timestamp. |
+| `Vals[].Val` | number | Historical sample value. Note `Val`, not `Value`. |
+
+### Example
+
+Request station `800` for a 1,800-second period. Replace the station number with one available to your account. If Unix seconds are confirmed, this interval is 2026-09-29 16:00–16:30 UTC.
+
+```sh
+curl --request POST 'http://175.138.67.155:7077/hd/station/detaillist.json' \
+  --header 'Content-Type: application/json' \
+  --data '{"Token":"YOUR_ACCESS_TOKEN","StationSns":["800"],"Begin":1790697600,"End":1790699400}'
+```
+
+Illustrative response showing core reading fields. Other fields are intentionally omitted from this example; the API has not been changed to remove them.
 
 ```json
 {
@@ -174,113 +222,115 @@ This document is the open API documentation for the Station Data Query System. I
     "Total": 1,
     "Data": [
       {
-        "Divisions": [
-          {
-            "dt": "1",
-            "Id": "66de5bb28c428f4730f6f2e2",
-            "Weight": 1,
-            "Name": "Testing"
-          }
-        ],
+        "Station": {
+          "Id": "EXAMPLE_STATION_ID",
+          "Name": "800",
+          "Sn": "800",
+          "Ty": 808,
+          "TyName": "HD86Q",
+          "TimeStamp": 1790698800,
+          "Position": {"Lat": "34.000000", "Lng": "113.000000"}
+        },
         "Sensors": [
           {
             "Id": "PTAD_800_SJLJ",
             "ObjId": "PTAD_800_SJLJ",
             "Name": "Net Totalizer",
-            "SType": "66bc5bdf8c428f36ae784199",
             "Unit": "m³",
             "Dp": 3,
-            "MN": null,
-            "MX": null,
-            "Time": 1790229600,
+            "Time": 1790698800,
             "Value": 851.877,
-            "Weight": 1,
             "DType": "SJLJ",
             "Vals": [
-              {
-                "qval": null,
-                "Val": 17391.212,
-                "yval": null,
-                "lval": null,
-                "Time": 1788192000,
-                "Report": null,
-                "mval": null
-              }
-            ],
-            "Type": "hs",
-            "AlarmType": "",
-            "Alarm_r": 0,
-            "STime": 1774800000,
-            "Alarm_t": null,
-            "Alarm_v": null,
-            "Ref": 800,
-            "Level": 3,
-            "Confirmed": 1,
-            "ConfirmInfo": null,
-            "Dispatch": 0,
-            "Gdbh": null,
-            "Title": null,
-            "isShowDL": 0,
-            "bgbj_id": 0,
-            "Group": "",
-            "GroupNm": "[No Data]",
-            "extend_sns": null,
-            "Lastycolor": null,
-            "Befcolor": null,
-            "dltime": 0,
-            "Lastmcolor": null,
-            "At": "unknown",
-            "Count": 5138,
-            "Curcolor": null,
-            "VType": "3",
-            "Yescolor": null,
-            "Gd": 0
+              {"Time": 1790697900, "Val": 851.125},
+              {"Time": 1790698800, "Val": 851.877}
+            ]
           }
         ],
-        "Station": {
-          "Id": "689a95b9f766d221fe5f3429",
-          "Name": "800",
-          "Sn": "800",
-          "Ty": 808,
-          "TyName": "HD86Q",
-          "USN": null,
-          "NoiseSbbh": "",
-          "Fav": false,
-          "TimeStamp": 1790229600,
-          "Time": "09-24 14:00",
-          "Position": {
-            "Lat": "34.7694704434",
-            "Lng": "113.64590746"
-          },
-          "Weight": 2,
-          "KWeight": null,
-          "Diam": null,
-          "No": "",
-          "AZWZ": "",
-          "PId": "",
-          "Sjgs": null,
-          "Tl": "",
-          "Zoom": null,
-          "GID": "",
-          "Dp": null,
-          "DpName": null,
-          "Pic": 0,
-          "State": null,
-          "Glzd": [],
-          "Im": 0
-        },
         "Group": 0,
-        "TimeStamp": 1790229600
+        "TimeStamp": 1790698800
       }
     ]
   }
 }
 ```
 
-## 3. Common Error Description
+How to read this result:
 
-| Status / Scenario | Error Description | Resolution |
+- `Response.Total = 1`: one station matches the filter.
+- `Station.Sn = "800"`: identifies the station.
+- `Sensors[0].Name = "Net Totalizer"`, with `Unit = "m³"`: identifies the measurement and unit.
+- `Sensors[0].Value = 851.877`: latest reading, associated with `Sensors[0].Time`.
+- `Sensors[0].Vals`: two historical samples, both strictly inside the query interval. This avoids assuming inclusive boundaries.
+
+A latest reading is not a substitute for history. Do not assume it is the last sample of any requested historical period. Iterate both arrays for multiple stations and sensors.
+
+Example JavaScript parsing logic, after receiving parsed JSON as `result`:
+
+```js
+if (result.Code !== 0 || result.Success !== true) {
+  throw new Error(result.Message || "HEDA request failed");
+}
+for (const item of result.Response.Data) {
+  for (const sensor of item.Sensors) {
+    for (const sample of sensor.Vals) {
+      console.log(item.Station.Sn, sensor.Id, sample.Time, sample.Val, sensor.Unit);
+    }
+  }
+}
+```
+
+This illustrates the documented success shape. Confirm missing-field and null behavior before building production parsing logic. Do not convert missing/null readings into zero.
+
+## Alarm fields and additional metadata
+
+These fields are secondary to the basic history integration. This rewrite does not remove them from the API.
+
+Fields inside `Response.Data[].Sensors[]`:
+
+| Field | JSON type | Description |
 |---|---|---|
-| Non-zero Code | Request error; `Message` returns the specific reason | Check the returned `Message` and validate the parameters, Token validity, and account permissions |
-| Token Invalid | Token expired or invalid | Call the authentication interface again to obtain a new Token |
-| Missing Parameters | Required parameter missing or malformed | Validate the completeness of request parameters, data types, and timestamp format |
+| `AlarmType` | string | Alarm type name. |
+| `Alarm_r` | integer | Recovery flag: `0` = not recovered; `1` = recovered. |
+| `STime` | integer | Alarm start timestamp. |
+| `Ref` | number | Alarm threshold reference value. |
+| `Level` | integer | Alarm level; severity mapping unspecified. |
+| `Confirmed` | integer | `0` = unconfirmed; `1` = confirmed. |
+| `Dispatch` | integer | Work-order dispatch flag: `0` = no; `1` = yes. |
+
+The source does not define how to determine whether an alarm currently exists. Do not treat `Alarm_r = 0` alone as proof of an active alarm.
+
+The original example includes the following additional fields without sufficient definitions. Presence in a sample does not establish a required field, default, complete type or stable enum. Request definitions if your integration needs them.
+
+| Object | Additional fields observed in the original example |
+|---|---|
+| `Divisions[]` | `dt`, `Id`, `Weight`, `Name` |
+| `Sensors[]` | `SType`, `MN`, `MX`, `Weight`, `Type`, `Alarm_t`, `Alarm_v`, `ConfirmInfo`, `Gdbh`, `Title`, `isShowDL`, `bgbj_id`, `Group`, `GroupNm`, `extend_sns`, `Lastycolor`, `Befcolor`, `dltime`, `Lastmcolor`, `At`, `Count`, `Curcolor`, `VType`, `Yescolor`, `Gd` |
+| `Sensors[].Vals[]` | `qval`, `yval`, `lval`, `Report`, `mval` |
+| `Station` | `USN`, `NoiseSbbh`, `Fav`, `Weight`, `KWeight`, `Diam`, `No`, `AZWZ`, `PId`, `Sjgs`, `Tl`, `Zoom`, `GID`, `Dp`, `DpName`, `Pic`, `State`, `Glzd`, `Im` |
+
+## Troubleshooting
+
+| Symptom | What to check |
+|---|---|
+| Authentication fails | Confirm `Cid`, deployment-specific `Aid`, username and password. |
+| Non-zero `Code` or `Success = false` | Inspect `Message`; check fields, permissions and token validity. |
+| Invalid or expired token | Authenticate again and replace the JSON-body `Token`. |
+| Station not returned | Check station number, exact spelling and account permissions. If both filters are supplied, check their intersection. |
+| Missing/unexpected history | Check timestamp units, interval and sensor `Vals`; a latest reading does not guarantee history for the interval. |
+| HTTP/connection error or non-JSON response | Check deployment URL and HTTP response before parsing the application result. |
+
+Numeric error codes, HTTP error mappings and example error bodies are unspecified in the source and are not invented here.
+
+## Deployment details to confirm
+
+- Correct `Aid`: the previous document conflicts between `Uniscada` and `scada`.
+- Timestamp epoch, units of all response time fields, and display timezone.
+- Query boundaries, maximum interval, result limits, pagination and ordering.
+- Omitted/empty filters, no-match/no-history responses and nullable fields.
+- Token lifetime, error-code definitions and station discovery if required.
+- Approved deployment URL and HTTPS availability; the source specifies HTTP only.
+
+## Documentation basis
+
+This rewrites the two interfaces in [the original HEDA documentation](https://github.com/yuanjoe27-sys/HEDA/tree/81978dc9e500b5b882be3f4ed400b0a1fbc009a3). Organization follows the purpose/signature/return-value/example pattern of [the Ovarro reference](https://github.com/Ovarro/XilogApiDocs#flowloggerall), while preserving HEDA paths and field names. No live API requests were made to validate service behavior.
