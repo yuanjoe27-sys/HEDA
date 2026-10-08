@@ -6,8 +6,8 @@ The HEDA API provides station information, latest sensor readings and historical
 
 | Method | Endpoint | Purpose |
 |---|---|---|
-| POST | [user/auth.json](#authentication) | Obtain an access token. |
-| POST | [station/detaillist.json](#station-data) | Retrieve station details and sensor data for a time range. |
+| POST | [/hd/user/auth.json](#authentication) | Obtain an access token. |
+| POST | [/station/detaillist.json](#station-data) | Retrieve station details and sensor data for a time range. |
 
 ## Getting started
 
@@ -16,7 +16,7 @@ Ask HEDA for your customer ID (`Cid`), application ID (`Aid`), username, passwor
 Base URL for the documented deployment:
 
 ```text
-http://175.138.67.155:7077/hd
+http://175.138.67.155:7077
 ```
 
 Send JSON with `Content-Type: application/json`. Preserve field spelling and capitalization.
@@ -46,7 +46,7 @@ Process a response as successful when `Code` is `0` and `Success` is `true`. Tre
 `Station.Time` is a display string (the original example is `09-24 14:00`). Its timezone and complete format are unspecified; do not use it to construct query boundaries.
 
 <a id="authentication"></a>
-## user/auth.json
+## /hd/user/auth.json
 
 ### Purpose
 
@@ -114,7 +114,7 @@ Illustrative response:
 Use `Response.Token`, not `Response.Uid`, as the credential. If the service reports an expired or invalid token, authenticate again. Do not assume Ovarro's token lifetime applies here.
 
 <a id="station-data"></a>
-## station/detaillist.json
+## /station/detaillist.json
 
 ### Purpose
 
