@@ -10,15 +10,13 @@ The HEDA API provides station information, latest sensor readings, historical da
 - [Authentication](#authentication)
 - [Station tree](#station-tree)
 - [Station details and sensor data](#station-details-and-sensor-data)
-- [Alarm fields and additional metadata](#alarm-fields-and-additional-metadata)
-- [Items to confirm with HEDA](#items-to-confirm-with-heda)
 
 ## API overview
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | POST | `/hd/user/auth.json` | Obtain an access token. |
-| To be confirmed | `/hd/station/tree.json` | Discover station numbers and names. |
+| POST | `/hd/station/tree.json` | Discover station numbers and names. |
 | POST | `/hd/station/detaillist.json` | Retrieve station details and sensor data for a time range. |
 
 The source lists POST for the station-tree endpoint in its overview but says the method is unspecified in its endpoint description. Confirm the method with HEDA before using it.
@@ -345,43 +343,3 @@ This example shows core reading fields; additional metadata and alarm fields are
 ```
 
 The result contains one station (`Sn = "800"`). Its sensor's latest value is `851.877 m³`, associated with `Sensors[0].Time`. `Vals` contains two historical samples strictly inside the requested interval; this example does not establish boundary inclusivity.
-
-## Alarm fields and additional metadata
-
-### Alarm fields
-
-Fields inside `Response.Data[].Sensors[]`:
-
-| Field | JSON type | Description |
-| --- | --- | --- |
-| `AlarmType` | string | Alarm type name. |
-| `Alarm_r` | integer | Recovery flag: `0` = not recovered; `1` = recovered. |
-| `STime` | integer | Alarm start timestamp. |
-| `Ref` | number | Alarm threshold reference value. |
-| `Level` | integer | Alarm level; severity mapping is unspecified. |
-| `Confirmed` | integer | `0` = unconfirmed; `1` = confirmed. |
-| `Dispatch` | integer | Work-order dispatch flag: `0` = no; `1` = yes. |
-
-The source does not define how to identify an active alarm. `Alarm_r = 0` alone does not establish that an alarm currently exists.
-
-### Additional fields
-
-The source lists these fields without sufficient definitions. Their presence in an example does not establish requiredness, defaults, complete types or stable enums.
-
-| Object | Additional fields |
-| --- | --- |
-| `Divisions[]` | `dt`, `Id`, `Weight`, `Name` |
-| `Sensors[]` | `SType`, `MN`, `MX`, `Weight`, `Type`, `Alarm_t`, `Alarm_v`, `ConfirmInfo`, `Gdbh`, `Title`, `isShowDL`, `bgbj_id`, `Group`, `GroupNm`, `extend_sns`, `Lastycolor`, `Befcolor`, `dltime`, `Lastmcolor`, `At`, `Count`, `Curcolor`, `VType`, `Yescolor`, `Gd` |
-| `Sensors[].Vals[]` | `qval`, `yval`, `lval`, `Report`, `mval` |
-| `Station` | `USN`, `NoiseSbbh`, `Fav`, `Weight`, `KWeight`, `Diam`, `No`, `AZWZ`, `PId`, `Sjgs`, `Tl`, `Zoom`, `GID`, `Dp`, `DpName`, `Pic`, `State`, `Glzd`, `Im` |
-
-## Items to confirm with HEDA
-
-| Area | Open questions |
-| --- | --- |
-| Authentication | Deployment-specific `Aid`: the source mentions both `Uniscada` and `scada`. Token lifetime and timestamp epoch. Meaning of the returned `UserName`. |
-| Station tree | HTTP method; default root when `Type` or `ObjId` is omitted; supported node types; `EndType` pruning rules; polygon validation and closure rules. |
-| Data queries | Omitted/empty-filter behavior; maximum query duration; boundary inclusivity; record limits; pagination; result ordering. |
-| Timestamps | Epoch/timezone for numeric timestamps and display-time format/timezone. |
-| Errors | Error codes, HTTP status behavior and error payload schema. |
-| Metadata and alarms | Type/data-type enums; alarm severity and active-alarm rules; definitions for additional fields. |
