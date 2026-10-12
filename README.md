@@ -342,4 +342,4 @@ This example shows core reading fields; additional metadata and alarm fields are
 }
 ```
 
-The result contains one station (`Sn = "800"`). Its sensor's latest value is `851.877 m³`, associated with `Sensors[0].Time`. `Vals` contains two historical samples strictly inside the requested interval; this example does not establish boundary inclusivity.
+The result contains one station (`Sn = "111"`). Its sensor's latest value is `851.877 m³`, associated with `Sensors[0].Time`. `Vals` contains two historical samples strictly inside the requested interval; this example does not establish boundary inclusivity.
