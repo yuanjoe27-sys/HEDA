@@ -26,7 +26,7 @@ The source lists POST for the station-tree endpoint in its overview but says the
 Base URL for the documented deployment:
 
 ```text
-http://175.138.67.155:7077
+https://175.138.67.155:7077
 ```
 
 Obtain your customer ID (`Cid`), application ID (`Aid`), username and password from HEDA. To query a specific subtree, also obtain its root node type and ID.
@@ -48,7 +48,7 @@ Obtain your customer ID (`Cid`), application ID (`Aid`), username and password f
 
 | Response field | JSON type | Meaning |
 | --- | --- | --- |
-| `Code` | integer | Application result: `0` = success; non-zero = error. This is separate from the HTTP status code. |
+| `Code` | integer | Application result: `0` = success; non-zero = error. This is separate from the https status code. |
 | `Success` | boolean | `true` = success; `false` = failure. Present in the authentication and detail examples; absent from the supplied tree example. |
 | `Message` | string | Result description. Authentication/detail examples use `OK`; the tree example uses an empty string. |
 | `Response` | object | Endpoint-specific payload. Error payload structure is unspecified. |
@@ -61,7 +61,7 @@ Timestamps described below are in seconds. Their epoch and timezone interpretati
 
 Authenticate with your customer ID, application ID and account credentials to obtain a token.
 
-```http
+```https
 POST /hd/user/auth.json
 Content-Type: application/json
 ```
@@ -90,7 +90,7 @@ Content-Type: application/json
 ### Example request
 
 ```bash
-curl --request POST 'http://175.138.67.155:7077/hd/user/auth.json' \
+curl --request POST 'https://175.138.67.155:7077/hd/user/auth.json' \
   --header 'Content-Type: application/json' \
   --data '{"Cid":"YOUR_CUSTOMER_ID","Aid":"YOUR_APPLICATION_ID","UserName":"YOUR_USERNAME","Password":"YOUR_PASSWORD"}'
 ```
@@ -120,7 +120,7 @@ Query the hierarchy of divisions, stations and equipment nodes. Station nodes pr
 
 Endpoint: `/hd/station/tree.json`  
 Content type: `application/json`  
-HTTP method: **to be confirmed**.
+https method: **to be confirmed**.
 
 ### Request parameters
 
@@ -205,7 +205,7 @@ Select station nodes rather than the division root. Use `StationNo` rather than 
 
 Retrieve station metadata, sensor metadata, latest readings, historical samples and alarm-related fields for matching stations.
 
-```http
+```https
 POST /hd/station/detaillist.json
 Content-Type: application/json
 ```
@@ -289,7 +289,7 @@ Fields inside `Response.Data[].Sensors[]`:
 Query station `800` for a 1,800-second interval. Replace the number with one available to your account.
 
 ```bash
-curl --request POST 'http://175.138.67.155:7077/hd/station/detaillist.json' \
+curl --request POST 'https://175.138.67.155:7077/hd/station/detaillist.json' \
   --header 'Content-Type: application/json' \
   --data '{"Token":"YOUR_ACCESS_TOKEN","StationSns":["800"],"Begin":1790697600,"End":1790699400}'
 ```
