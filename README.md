@@ -291,10 +291,10 @@ Query station `800` for a 1,800-second interval. Replace the number with one ava
 ```bash
 curl --request POST 'https://heda.cosmos-ins.com.my:7077/hd/station/detaillist.json' \
   --header 'Content-Type: application/json' \
-  --data '{"Token":"YOUR_ACCESS_TOKEN","StationSns":["800"],"Begin":1790697600,"End":1790699400}'
+  --data '{"Token":"YOUR_ACCESS_TOKEN","StationSns":["111"],"Begin":1790697600,"End":1790699400}'
 ```
 
-Alternatively, replace `StationSns` with `"StationNms": ["No.1 Water Supply Station"]`.
+Alternatively, or replace `StationSns` with `"StationNms": ["PJ.917 USJ 1/13 (MP1)"]`. or both.
 
 ### Example response
 
