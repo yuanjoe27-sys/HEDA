@@ -179,8 +179,8 @@ The `Area` example is abbreviated; it does not establish polygon validation or c
     "Children": [
       {
         "Type": "STATION",
-        "Name": "No.1 Water Supply Station",
-        "StationNo": "800",
+        "Name": "PJ.821 USJ 1 Subang Permai (MP1)",
+        "StationNo": "111",
         "ObjId": "STA_001",
         "Position": {"Lng": 120.124, "Lat": 30.655},
         "Area": [],
@@ -196,8 +196,8 @@ The `Area` example is abbreviated; it does not establish polygon validation or c
 
 | Station-node field | Query parameter | Example |
 | --- | --- | --- |
-| `StationNo` | `StationSns` | `"800"` → `["800"]` |
-| `Name` | `StationNms` | `"No.1 Water Supply Station"` → `["No.1 Water Supply Station"]` |
+| `StationNo` | `StationSns` | `"111"` → `["111"]` |
+| `Name` | `StationNms` | `"PJ.821 USJ 1 Subang Permai (MP1)"` → `["PJ.821 USJ 1 Subang Permai (MP1)"]` |
 
 Select station nodes rather than the division root. Use `StationNo` rather than `ObjId` for `StationSns`.
 
@@ -215,7 +215,7 @@ Content-Type: application/json
 | Parameter | Required | JSON type | Description |
 | --- | --- | --- | --- |
 | `Token` | Yes | string | `Response.Token` returned by authentication. |
-| `StationSns` | No | array of strings | Exact station numbers from tree nodes' `StationNo`, for example `["800"]`. |
+| `StationSns` | No | array of strings | Exact station numbers from tree nodes' `StationNo`, for example `["111"]`. |
 | `StationNms` | No | array of strings | Exact station names from tree nodes' `Name`. |
 | `Begin` | Yes | integer | Query start timestamp in seconds. |
 | `End` | Yes | integer | Query end timestamp in seconds. |
@@ -286,7 +286,7 @@ Fields inside `Response.Data[].Sensors[]`:
 
 ### Example request
 
-Query station `800` for a 1,800-second interval. Replace the number with one available to your account.
+Query station `111` for a 1,800-second interval. Replace the number with one available to your account.
 
 ```bash
 curl --request POST 'https://heda.cosmos-ins.com.my:7077/hd/station/detaillist.json' \
@@ -294,7 +294,7 @@ curl --request POST 'https://heda.cosmos-ins.com.my:7077/hd/station/detaillist.j
   --data '{"Token":"YOUR_ACCESS_TOKEN","StationSns":["111"],"Begin":1790697600,"End":1790699400}'
 ```
 
-Alternatively, or replace `StationSns` with `"StationNms": ["PJ.917 USJ 1/13 (MP1)"]`. or both.
+Alternatively, or replace `StationSns` with `"StationNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`. or both.
 
 ### Example response
 
@@ -311,8 +311,8 @@ This example shows core reading fields; additional metadata and alarm fields are
       {
         "Station": {
           "Id": "EXAMPLE_STATION_ID",
-          "Name": "No.1 Water Supply Station",
-          "Sn": "800",
+          "Name": "PJ.821 USJ 1 Subang Permai (MP1)",
+          "Sn": "111",
           "Ty": 808,
           "TyName": "HD86Q",
           "TimeStamp": 1790698800,
