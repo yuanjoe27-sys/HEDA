@@ -26,7 +26,7 @@ The source lists POST for the station-tree endpoint in its overview but says the
 Base URL for the documented deployment:
 
 ```text
-https://175.138.67.155:7077
+https://heda.cosmos-ins.com.my:7077
 ```
 
 Obtain your customer ID (`Cid`), application ID (`Aid`), username and password from HEDA. To query a specific subtree, also obtain its root node type and ID.
@@ -90,7 +90,7 @@ Content-Type: application/json
 ### Example request
 
 ```bash
-curl --request POST 'https://175.138.67.155:7077/hd/user/auth.json' \
+curl --request POST 'https://heda.cosmos-ins.com.my:7077/hd/user/auth.json' \
   --header 'Content-Type: application/json' \
   --data '{"Cid":"YOUR_CUSTOMER_ID","Aid":"YOUR_APPLICATION_ID","UserName":"YOUR_USERNAME","Password":"YOUR_PASSWORD"}'
 ```
@@ -289,7 +289,7 @@ Fields inside `Response.Data[].Sensors[]`:
 Query station `800` for a 1,800-second interval. Replace the number with one available to your account.
 
 ```bash
-curl --request POST 'https://175.138.67.155:7077/hd/station/detaillist.json' \
+curl --request POST 'https://heda.cosmos-ins.com.my:7077/hd/station/detaillist.json' \
   --header 'Content-Type: application/json' \
   --data '{"Token":"YOUR_ACCESS_TOKEN","StationSns":["800"],"Begin":1790697600,"End":1790699400}'
 ```
