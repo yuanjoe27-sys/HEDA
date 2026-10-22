@@ -6,8 +6,8 @@ The HEDA API provides site information, latest sensor readings, historical data 
 
 - [API overview](#api-overview)
 - [Authentication](#authentication)
-- [site tree](#site-tree)
-- [site details and sensor data](#site-details-and-sensor-data)
+- [Site tree](#site-tree)
+- [Site details and sensor data](#site-details-and-sensor-data)
 
 ## API overview
 
