@@ -78,6 +78,7 @@ Body:
 ```
 
 ## Site tree
+
 **Returns site numbers and names.**
 
 ### Request parameters
@@ -115,9 +116,7 @@ Content type: `application/json`
 
 ### Example response
 
-The `Area` example is abbreviated; it does not establish polygon validation or closure rules.
-
-Comments below are for documentation only; the actual API response uses standard JSON.
+**Key field: `Response.Children.name` and `Response.Children.StationNo`. Other information fields can be ignored.**
 
 ```jsonc
 {
