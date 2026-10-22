@@ -94,7 +94,7 @@ Body:
 | --- | --- | --- |
 | `Type` | string | Node classification; examples include `DIVISION` and `site`. |
 | **`Name`** | string | **Key field on site nodes: save for the next request's `siteNms` array.** Names on division nodes are not site names. |
-| **`siteNo`** | string | **Key field on site nodes: save for the next request's `siteSns` array.** Availability on other node types is unspecified. |
+| **`StationNo`** | string | **Key field on site nodes: save for the next request's `siteSns` array.** Availability on other node types is unspecified. |
 | `ObjId` | string | Unique tree-node ID. |
 | `Position` | object | Node center coordinates. |
 | `Position.Lng` | number | Longitude. |
@@ -135,7 +135,7 @@ Comments below are for documentation only; the actual API response uses standard
       {
         "Type": "site", // Can be ignored.
         "Name": "PJ.821 USJ 1 Subang Permai (MP1)", // KEY: save for siteNms in the next API request.
-        "siteNo": "111", // KEY: save for siteSns in the next API request.
+        "StationNo": "111", // KEY: save for siteSns in the next API request.
         "ObjId": "STA_001", // // Can be ignored.
         "Position": {"Lng": 120.124, "Lat": 30.655}, // Can be ignored.
         "Area": [], // Can be ignored.
@@ -151,10 +151,10 @@ Comments below are for documentation only; the actual API response uses standard
 
 | site-node field | Query parameter | Example |
 | --- | --- | --- |
-| `siteNo` | `siteSns` | `"111"` → `["111"]` |
+| `StationNo` | `siteSns` | `"111"` → `["111"]` |
 | `Name` | `siteNms` | `"PJ.821 USJ 1 Subang Permai (MP1)"` → `["PJ.821 USJ 1 Subang Permai (MP1)"]` |
 
-Select site nodes rather than the division root. Use `siteNo` rather than `ObjId` for `siteSns`.
+Select site nodes rather than the division root. Use `StationNo` rather than `ObjId` for `siteSns`.
 
 For the site in the example, the next data-query request can use:
 
@@ -184,8 +184,8 @@ Content-Type: application/json
 | Parameter | Required | JSON type | Description |
 | --- | --- | --- | --- |
 | `Token` | Yes | string | `Response.Token` returned by authentication. |
-| `siteSns` | No | array of strings | Exact site numbers from tree nodes' `siteNo`, for example `["111"]`. |
-| `siteNms` | No | array of strings | Exact site names from tree nodes' `Name`. |
+| `StationSns` | No | array of strings | Exact site numbers from tree nodes' `StationNo`, for example `["111"]`. |
+| `StationNms` | No | array of strings | Exact site names from tree nodes' `Name`. |
 | `Begin` | Yes | integer | Query start timestamp in seconds. |
 | `End` | Yes | integer | Query end timestamp in seconds. |
 
@@ -226,7 +226,7 @@ Fields inside `Response.Data[].site`:
 | --- | --- | --- |
 | `Id` | string | Unique site ID. |
 | `Name` | string | site name, used by `siteNms`. |
-| `Sn` | string | site number, used by `siteSns`; corresponds to tree-node `siteNo`. |
+| `Sn` | string | site number, used by `siteSns`; corresponds to tree-node `StationNo`. |
 | `Ty` | integer | site type code; enum values are unspecified. |
 | `TyName` | string | site type name. |
 | `TimeStamp` | integer | Latest data timestamp. |
