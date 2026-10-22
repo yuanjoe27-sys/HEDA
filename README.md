@@ -13,9 +13,9 @@ The HEDA API provides site information, latest sensor readings, historical data 
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| POST | `/hd/user/auth.json` | Obtain an access token. |
-| POST | `/hd/station/tree.json` | Discover site numbers and names. |
-| POST | `/hd/station/detaillist.json` | Retrieve site details and sensor data for a time range. |
+| POST | `/hd/user/auth.json` | Returns authentication bearer token. |
+| POST | `/hd/station/tree.json` | Returns site numbers and names. |
+| POST | `/hd/station/detaillist.json` | Returns site details and sensor data for a time range. |
 
 ## Authentication
 
