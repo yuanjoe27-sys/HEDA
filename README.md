@@ -1,21 +1,21 @@
 # HEDA Data Access API
 
-The HEDA API provides station information, latest sensor readings, historical data and alarm-related fields. Authenticate first, then send the returned token in station-data request bodies.
+The HEDA API provides site information, latest sensor readings, historical data and alarm-related fields. Authenticate first, then send the returned token in site-data request bodies.
 
 ## Contents
 
 - [API overview](#api-overview)
 - [Authentication](#authentication)
-- [Station tree](#station-tree)
-- [Station details and sensor data](#station-details-and-sensor-data)
+- [site tree](#site-tree)
+- [site details and sensor data](#site-details-and-sensor-data)
 
 ## API overview
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | POST | `/hd/user/auth.json` | Obtain an access token. |
-| POST | `/hd/station/tree.json` | Discover station numbers and names. |
-| POST | `/hd/station/detaillist.json` | Retrieve station details and sensor data for a time range. |
+| POST | `/hd/station/tree.json` | Discover site numbers and names. |
+| POST | `/hd/station/detaillist.json` | Retrieve site details and sensor data for a time range. |
 
 ## Authentication
 
@@ -77,7 +77,7 @@ Body:
 }
 ```
 
-## Station tree
+## Site tree
 
 Endpoint: `https://heda.cosmos-ins.com.my:7077/hd/station/tree.json`  
 Content type: `application/json`  
@@ -94,15 +94,15 @@ Content type: `application/json`
 
 | Node field | JSON type | Description |
 | --- | --- | --- |
-| `Type` | string | Node classification; examples include `DIVISION` and `STATION`. |
-| **`Name`** | string | **Key field on station nodes: save for the next request's `StationNms` array.** Names on division nodes are not station names. |
-| **`StationNo`** | string | **Key field on station nodes: save for the next request's `StationSns` array.** Availability on other node types is unspecified. |
+| `Type` | string | Node classification; examples include `DIVISION` and `site`. |
+| **`Name`** | string | **Key field on site nodes: save for the next request's `siteNms` array.** Names on division nodes are not site names. |
+| **`siteNo`** | string | **Key field on site nodes: save for the next request's `siteSns` array.** Availability on other node types is unspecified. |
 | `ObjId` | string | Unique tree-node ID. |
 | `Position` | object | Node center coordinates. |
 | `Position.Lng` | number | Longitude. |
 | `Position.Lat` | number | Latitude. |
 | `Area` | array of objects | Coverage-area coordinates, each containing numeric `Lng` and `Lat`. |
-| `Children` | array of objects | Child nodes. Traverse recursively to find nested stations. |
+| `Children` | array of objects | Child nodes. Traverse recursively to find nested sites. |
 
 ### Example request body
 
@@ -132,9 +132,9 @@ Comments below are for documentation only; the actual API response uses standard
     ],
     "Children": [ 
       {
-        "Type": "STATION", // Can be ignored.
-        "Name": "PJ.821 USJ 1 Subang Permai (MP1)", // KEY: save for StationNms in the next API request.
-        "StationNo": "111", // KEY: save for StationSns in the next API request.
+        "Type": "site", // Can be ignored.
+        "Name": "PJ.821 USJ 1 Subang Permai (MP1)", // KEY: save for siteNms in the next API request.
+        "siteNo": "111", // KEY: save for siteSns in the next API request.
         "ObjId": "STA_001", // // Can be ignored.
         "Position": {"Lng": 120.124, "Lat": 30.655}, // Can be ignored.
         "Area": [], // Can be ignored.
@@ -146,32 +146,32 @@ Comments below are for documentation only; the actual API response uses standard
 }
 ```
 
-### Map a station to a data-query filter
+### Map a site to a data-query filter
 
-| Station-node field | Query parameter | Example |
+| site-node field | Query parameter | Example |
 | --- | --- | --- |
-| `StationNo` | `StationSns` | `"111"` → `["111"]` |
-| `Name` | `StationNms` | `"PJ.821 USJ 1 Subang Permai (MP1)"` → `["PJ.821 USJ 1 Subang Permai (MP1)"]` |
+| `siteNo` | `siteSns` | `"111"` → `["111"]` |
+| `Name` | `siteNms` | `"PJ.821 USJ 1 Subang Permai (MP1)"` → `["PJ.821 USJ 1 Subang Permai (MP1)"]` |
 
-Select station nodes rather than the division root. Use `StationNo` rather than `ObjId` for `StationSns`.
+Select site nodes rather than the division root. Use `siteNo` rather than `ObjId` for `siteSns`.
 
-For the station in the example, the next data-query request can use:
+For the site in the example, the next data-query request can use:
 
 ```json
 {
   "Token": "YOUR_ACCESS_TOKEN",
-  "StationSns": ["111"],
-  "StationNms": 'PJ.821 USJ 1 Subang Permai (MP1)', 
+  "siteSns": ["111"],
+  "siteNms": 'PJ.821 USJ 1 Subang Permai (MP1)', 
   "Begin": 1790697600,
   "End": 1790699400
 }
 ```
 
-Replace the token, station number and time range with your actual values. To filter by name instead, replace `StationSns` with `"StationNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`. Either filter can be used; both are not required. If both are supplied, the station must match both filters.
+Replace the token, site number and time range with your actual values. To filter by name instead, replace `siteSns` with `"siteNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`. Either filter can be used; both are not required. If both are supplied, the site must match both filters.
 
-## Station details and sensor data
+## site details and sensor data
 
-Retrieve station metadata, sensor metadata, latest readings, historical samples and alarm-related fields for matching stations.
+Retrieve site metadata, sensor metadata, latest readings, historical samples and alarm-related fields for matching sites.
 
 ```https
 POST https://heda.cosmos-ins.com.my:7077/hd/station/detaillist.json
@@ -183,54 +183,54 @@ Content-Type: application/json
 | Parameter | Required | JSON type | Description |
 | --- | --- | --- | --- |
 | `Token` | Yes | string | `Response.Token` returned by authentication. |
-| `StationSns` | No | array of strings | Exact station numbers from tree nodes' `StationNo`, for example `["111"]`. |
-| `StationNms` | No | array of strings | Exact station names from tree nodes' `Name`. |
+| `siteSns` | No | array of strings | Exact site numbers from tree nodes' `siteNo`, for example `["111"]`. |
+| `siteNms` | No | array of strings | Exact site names from tree nodes' `Name`. |
 | `Begin` | Yes | integer | Query start timestamp in seconds. |
 | `End` | Yes | integer | Query end timestamp in seconds. |
 
-Use a start time earlier than the end time. If both station filters are supplied, a station must match both; use its actual number and name. Behavior for omitted or empty filters is unspecified.
+Use a start time earlier than the end time. If both site filters are supplied, a site must match both; use its actual number and name. Behavior for omitted or empty filters is unspecified.
 
 ### Response structure
 
 ```text
 Response
-├── Total                         Number of matched stations
-└── Data[]                        Station results
-    ├── Station                   Station identity and location
-    ├── Sensors[]                 Sensors belonging to this station
+├── Total                         Number of matched sites
+└── Data[]                        site results
+    ├── site                   site identity and location
+    ├── Sensors[]                 Sensors belonging to this site
     │   ├── Unit                  Measurement unit
     │   ├── Time / Value          Latest reading
     │   └── Vals[]                Historical samples
     │       └── Time / Val        Sample timestamp and value
     ├── Divisions[]               Division metadata
-    ├── Group                     Station group identifier
-    └── TimeStamp                 Latest station-data timestamp
+    ├── Group                     site group identifier
+    └── TimeStamp                 Latest site-data timestamp
 ```
 
 | Field path | JSON type | Description |
 | --- | --- | --- |
-| `Response.Total` | integer | Number of matched stations. |
-| `Response.Data` | array of objects | Station results. |
-| `Response.Data[].Station` | object | Station metadata. |
+| `Response.Total` | integer | Number of matched sites. |
+| `Response.Data` | array of objects | site results. |
+| `Response.Data[].site` | object | site metadata. |
 | `Response.Data[].Sensors` | array of objects | Sensors, readings and alarm-related fields. |
 | `Response.Data[].Divisions` | array of objects | Division metadata. |
-| `Response.Data[].Group` | integer | Station group identifier. |
-| `Response.Data[].TimeStamp` | integer | Latest station-data timestamp. |
+| `Response.Data[].Group` | integer | site group identifier. |
+| `Response.Data[].TimeStamp` | integer | Latest site-data timestamp. |
 
-### Station fields
+### site fields
 
-Fields inside `Response.Data[].Station`:
+Fields inside `Response.Data[].site`:
 
 | Field | JSON type | Description |
 | --- | --- | --- |
-| `Id` | string | Unique station ID. |
-| `Name` | string | Station name, used by `StationNms`. |
-| `Sn` | string | Station number, used by `StationSns`; corresponds to tree-node `StationNo`. |
-| `Ty` | integer | Station type code; enum values are unspecified. |
-| `TyName` | string | Station type name. |
+| `Id` | string | Unique site ID. |
+| `Name` | string | site name, used by `siteNms`. |
+| `Sn` | string | site number, used by `siteSns`; corresponds to tree-node `siteNo`. |
+| `Ty` | integer | site type code; enum values are unspecified. |
+| `TyName` | string | site type name. |
 | `TimeStamp` | integer | Latest data timestamp. |
 | `Time` | string | Display time; timezone and complete format are unspecified. |
-| `Position` | object | Station coordinates. |
+| `Position` | object | site coordinates. |
 | `Position.Lat` | string | Latitude, represented as a string in this endpoint. |
 | `Position.Lng` | string | Longitude, represented as a string in this endpoint. |
 
@@ -254,15 +254,15 @@ Fields inside `Response.Data[].Sensors[]`:
 
 ### Example request
 
-Query station `111` for a 1,800-second interval. Replace the number with one available to your account.
+Query site `111` for a 1,800-second interval. Replace the number with one available to your account.
 
 ```bash
 curl --request POST 'https://heda.cosmos-ins.com.my:7077/hd/station/detaillist.json' \
   --header 'Content-Type: application/json' \
-  --data '{"Token":"YOUR_ACCESS_TOKEN","StationSns":["111"],"Begin":1790697600,"End":1790699400}'
+  --data '{"Token":"YOUR_ACCESS_TOKEN","siteSns":["111"],"Begin":1790697600,"End":1790699400}'
 ```
 
-Alternatively, or replace `StationSns` with `"StationNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`. or both.
+Alternatively, or replace `siteSns` with `"siteNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`. or both.
 
 ### Example response
 
@@ -277,8 +277,8 @@ This example shows core reading fields; additional metadata and alarm fields are
     "Total": 1,
     "Data": [
       {
-        "Station": {
-          "Id": "EXAMPLE_STATION_ID",
+        "site": {
+          "Id": "EXAMPLE_site_ID",
           "Name": "PJ.821 USJ 1 Subang Permai (MP1)",
           "Sn": "111",
           "Ty": 808,
@@ -310,4 +310,4 @@ This example shows core reading fields; additional metadata and alarm fields are
 }
 ```
 
-The result contains one station (`Sn = "111"`). Its sensor's latest value is `851.877 m³`, associated with `Sensors[0].Time`. `Vals` contains two historical samples strictly inside the requested interval; this example does not establish boundary inclusivity.
+The result contains one site (`Sn = "111"`). Its sensor's latest value is `851.877 m³`, associated with `Sensors[0].Time`. `Vals` contains two historical samples strictly inside the requested interval; this example does not establish boundary inclusivity.
