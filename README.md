@@ -31,7 +31,7 @@ Content-Type: application/json
 | Parameter | Required | JSON type | Description |
 | --- | --- | --- | --- |
 | `Cid` | Yes | string | Customer ID supplied by HEDA. |
-| `Aid` | Yes | string | Application ID supplied by HEDA. Use the value for your deployment. |
+| `Aid` | Yes | string | Application ID supplied by HEDA. |
 | `UserName` | Yes | string | Integration account username. |
 | `Password` | Yes | string | Integration account password. |
 
@@ -50,16 +50,20 @@ Content-Type: application/json
 ### Example request
 
 ```bash
-curl --request POST 'https://heda.cosmos-ins.com.my:7077/hd/user/auth.json' \
-  --header 'Content-Type: application/json' \
-  --data '{"Cid":"YOUR_CUSTOMER_ID","Aid":"YOUR_APPLICATION_ID","UserName":"YOUR_USERNAME","Password":"YOUR_PASSWORD"}'
+POST endpoint https://heda.cosmos-ins.com.my:7077/hd/user/auth.json
+Content-Type: application/json
+Body:
+{
+  "Cid": "YOUR_CUSTOMER_ID",
+  "Aid": "YOUR_APPLICATION_ID",
+  "UserName": "YOUR_USERNAME",
+  "Password": "YOUR_PASSWORD"
+}
 ```
 
 ### Example response
 
 **Key field: `Response.Token`. After confirming a successful response, save this token for subsequent API requests. Other user information fields can be ignored.**
-
-Comments below are for documentation only; the actual API response uses standard JSON.
 
 ```jsonc
 {
@@ -80,24 +84,14 @@ Comments below are for documentation only; the actual API response uses standard
 
 ## Station tree
 
-Query the hierarchy of divisions, stations and equipment nodes. Station nodes provide the filters for the station-data endpoint.
-
-**Step 2 — Get station numbers and names for the next API request.** After confirming a successful response, traverse `Response` and its nested `Children` arrays. For each node with `Type = "STATION"`, extract and save **`StationNo`** and **`Name`**. Use `StationNo` as an item in `StationSns`, or `Name` as an item in `StationNms`, when calling `/hd/station/detaillist.json` in the next step.
-
-`Type` identifies station nodes, and `Children` lets you find them at any depth. Division names are not station names. `ObjId`, `Position` and `Area` can be ignored when the purpose is to obtain station numbers and names.
-
-Endpoint: `/hd/station/tree.json`  
+Endpoint: `https://heda.cosmos-ins.com.my:7077/hd/station/tree.json`  
 Content type: `application/json`  
-https method: **to be confirmed**.
 
 ### Request parameters
 
 | Parameter | Required | JSON type | Description |
 | --- | --- | --- | --- |
 | `Token` | Yes | string | Access token returned by authentication. |
-| `Type` | No | string | Root node type, for example `DIVISION`. |
-| `ObjId` | No | string | Root node ID, for example `DIV_001`. |
-| `EndType` | No | string | Terminal node-type filter, for example `STATION`. |
 
 ### Response fields
 
@@ -117,14 +111,9 @@ https method: **to be confirmed**.
 
 ### Example request body
 
-Replace `DIV_001` with a valid root ID for your account.
-
 ```json
 {
-  "Token": "YOUR_ACCESS_TOKEN",
-  "Type": "DIVISION",
-  "ObjId": "DIV_001",
-  "EndType": "STATION"
+  "Token": "YOUR_ACCESS_TOKEN"
 }
 ```
 
@@ -136,29 +125,29 @@ Comments below are for documentation only; the actual API response uses standard
 
 ```jsonc
 {
-  "Code": 0, // Required: check that the value is 0 (success).
-  "Response": { // Root node; inspect its Type and traverse its Children.
-    "Type": "DIVISION", // A division node, not a station.
-    "Name": "East Operation Zone", // Division name; do not use in StationNms.
-    "ObjId": "DIV_001", // Can be ignored for station selection.
+  "Code": 0, 
+  "Response": { 
+    "Type": "DIVISION", // Can be ignored.
+    "Name": "East Operation Zone", // Can be ignored.
+    "ObjId": "DIV_001", // Can be ignored.
     "Position": {"Lng": 120.123456, "Lat": 30.654321}, // Can be ignored.
     "Area": [ // Can be ignored.
       {"Lng": 120.123, "Lat": 30.654},
       {"Lng": 120.125, "Lat": 30.656}
     ],
-    "Children": [ // Required: traverse nested children to find all station nodes.
+    "Children": [ 
       {
-        "Type": "STATION", // Required: identifies this node as a station.
+        "Type": "STATION", // Can be ignored.
         "Name": "PJ.821 USJ 1 Subang Permai (MP1)", // KEY: save for StationNms in the next API request.
         "StationNo": "111", // KEY: save for StationSns in the next API request.
-        "ObjId": "STA_001", // Can be ignored; do not use as StationSns.
+        "ObjId": "STA_001", // // Can be ignored.
         "Position": {"Lng": 120.124, "Lat": 30.655}, // Can be ignored.
         "Area": [], // Can be ignored.
-        "Children": [] // No child nodes in this example; traverse if non-empty.
+        "Children": [] // Can be ignored.
       }
     ]
   },
-  "Message": "" // Only needed for troubleshooting when the request fails.
+  "Message": "" // Can be ignored.
 }
 ```
 
@@ -177,6 +166,7 @@ For the station in the example, the next data-query request can use:
 {
   "Token": "YOUR_ACCESS_TOKEN",
   "StationSns": ["111"],
+  "StationNms": 'PJ.821 USJ 1 Subang Permai (MP1)', 
   "Begin": 1790697600,
   "End": 1790699400
 }
@@ -189,7 +179,7 @@ Replace the token, station number and time range with your actual values. To fil
 Retrieve station metadata, sensor metadata, latest readings, historical samples and alarm-related fields for matching stations.
 
 ```https
-POST /hd/station/detaillist.json
+POST https://heda.cosmos-ins.com.my:7077/hd/station/detaillist.json
 Content-Type: application/json
 ```
 
