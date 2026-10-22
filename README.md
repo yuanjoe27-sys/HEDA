@@ -78,9 +78,7 @@ Body:
 ```
 
 ## Site tree
-
-Endpoint: `https://heda.cosmos-ins.com.my:7077/hd/station/tree.json`  
-Content type: `application/json`  
+**Returns site numbers and names.**
 
 ### Request parameters
 
@@ -105,6 +103,9 @@ Content type: `application/json`
 | `Children` | array of objects | Child nodes. Traverse recursively to find nested sites. |
 
 ### Example request body
+
+Endpoint: `https://heda.cosmos-ins.com.my:7077/hd/station/tree.json`  
+Content type: `application/json`  
 
 ```json
 {
