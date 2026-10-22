@@ -93,8 +93,8 @@ Body:
 | Node field | JSON type | Description |
 | --- | --- | --- |
 | `Type` | string | Node classification; examples include `DIVISION` and `site`. |
-| **`Name`** | string | **Key field on site nodes: save for the next request's `siteNms` array.** Names on division nodes are not site names. |
-| **`StationNo`** | string | **Key field on site nodes: save for the next request's `siteSns` array.** Availability on other node types is unspecified. |
+| **`Name`** | string | **Key field on site nodes: save for the next request's `StationNms` array.** Names on division nodes are not site names. |
+| **`StationNo`** | string | **Key field on site nodes: save for the next request's `StationSns` array.** Availability on other node types is unspecified. |
 | `ObjId` | string | Unique tree-node ID. |
 | `Position` | object | Node center coordinates. |
 | `Position.Lng` | number | Longitude. |
@@ -134,8 +134,8 @@ Comments below are for documentation only; the actual API response uses standard
     "Children": [ 
       {
         "Type": "site", // Can be ignored.
-        "Name": "PJ.821 USJ 1 Subang Permai (MP1)", // KEY: save for siteNms in the next API request.
-        "StationNo": "111", // KEY: save for siteSns in the next API request.
+        "Name": "PJ.821 USJ 1 Subang Permai (MP1)", // KEY: save for StationNms in the next API request.
+        "StationNo": "111", // KEY: save for StationSns in the next API request.
         "ObjId": "STA_001", // // Can be ignored.
         "Position": {"Lng": 120.124, "Lat": 30.655}, // Can be ignored.
         "Area": [], // Can be ignored.
@@ -151,24 +151,24 @@ Comments below are for documentation only; the actual API response uses standard
 
 | site-node field | Query parameter | Example |
 | --- | --- | --- |
-| `StationNo` | `siteSns` | `"111"` → `["111"]` |
-| `Name` | `siteNms` | `"PJ.821 USJ 1 Subang Permai (MP1)"` → `["PJ.821 USJ 1 Subang Permai (MP1)"]` |
+| `StationNo` | `StationSns` | `"111"` → `["111"]` |
+| `Name` | `StationNms` | `"PJ.821 USJ 1 Subang Permai (MP1)"` → `["PJ.821 USJ 1 Subang Permai (MP1)"]` |
 
-Select site nodes rather than the division root. Use `StationNo` rather than `ObjId` for `siteSns`.
+Select site nodes rather than the division root. Use `StationNo` rather than `ObjId` for `StationSns`.
 
 For the site in the example, the next data-query request can use:
 
 ```json
 {
   "Token": "YOUR_ACCESS_TOKEN",
-  "siteSns": ["111"],
-  "siteNms": 'PJ.821 USJ 1 Subang Permai (MP1)', 
+  "StationSns": ["111"],
+  "StationNms": 'PJ.821 USJ 1 Subang Permai (MP1)', 
   "Begin": 1790697600,
   "End": 1790699400
 }
 ```
 
-Replace the token, site number and time range with your actual values. To filter by name instead, replace `siteSns` with `"siteNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`. Either filter can be used; both are not required. If both are supplied, the site must match both filters.
+Replace the token, site number and time range with your actual values. To filter by name instead, replace `StationSns` with `"StationNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`. Either filter can be used; both are not required. If both are supplied, the site must match both filters.
 
 ## site details and sensor data
 
@@ -225,8 +225,8 @@ Fields inside `Response.Data[].site`:
 | Field | JSON type | Description |
 | --- | --- | --- |
 | `Id` | string | Unique site ID. |
-| `Name` | string | site name, used by `siteNms`. |
-| `Sn` | string | site number, used by `siteSns`; corresponds to tree-node `StationNo`. |
+| `Name` | string | site name, used by `StationNms`. |
+| `Sn` | string | site number, used by `StationSns`; corresponds to tree-node `StationNo`. |
 | `Ty` | integer | site type code; enum values are unspecified. |
 | `TyName` | string | site type name. |
 | `TimeStamp` | integer | Latest data timestamp. |
@@ -260,10 +260,10 @@ Query site `111` for a 1,800-second interval. Replace the number with one availa
 ```bash
 curl --request POST 'https://heda.cosmos-ins.com.my:7077/hd/station/detaillist.json' \
   --header 'Content-Type: application/json' \
-  --data '{"Token":"YOUR_ACCESS_TOKEN","siteSns":["111"],"Begin":1790697600,"End":1790699400}'
+  --data '{"Token":"YOUR_ACCESS_TOKEN","StationSns":["111"],"Begin":1790697600,"End":1790699400}'
 ```
 
-Alternatively, or replace `siteSns` with `"siteNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`. or both.
+Alternatively, or replace `StationSns` with `"StationNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`. or both.
 
 ### Example response
 
