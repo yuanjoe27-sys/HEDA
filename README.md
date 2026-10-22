@@ -6,7 +6,6 @@ The HEDA API provides station information, latest sensor readings, historical da
 
 - [API overview](#api-overview)
 - [Getting started](#getting-started)
-- [Common conventions](#common-conventions)
 - [Authentication](#authentication)
 - [Station tree](#station-tree)
 - [Station details and sensor data](#station-details-and-sensor-data)
@@ -19,8 +18,6 @@ The HEDA API provides station information, latest sensor readings, historical da
 | POST | `/hd/station/tree.json` | Discover station numbers and names. |
 | POST | `/hd/station/detaillist.json` | Retrieve station details and sensor data for a time range. |
 
-The source lists POST for the station-tree endpoint in its overview but says the method is unspecified in its endpoint description. Confirm the method with HEDA before using it.
-
 ## Getting started
 
 Base URL for the documented deployment:
@@ -28,23 +25,6 @@ Base URL for the documented deployment:
 ```text
 https://heda.cosmos-ins.com.my:7077
 ```
-
-Obtain your customer ID (`Cid`), application ID (`Aid`), username and password from HEDA. To query a specific subtree, also obtain its root node type and ID.
-
-1. Call `/hd/user/auth.json` with your credentials.
-2. Check the result and copy `Response.Token`.
-3. Call `/hd/station/tree.json`. Inspect the root and traverse `Children` recursively to find nodes with `Type = "STATION"`.
-4. Use a station's `StationNo` in `StationSns`, or its `Name` in `StationNms`. Both filters are arrays of strings.
-5. Call `/hd/station/detaillist.json` with the token, station filter and time range. For the first request, use one station number.
-6. Read historical samples from `Response.Data[].Sensors[].Vals[]`. Each sample has `Time` and `Val`; the sensor's `Unit` supplies the measurement unit.
-
-## Common conventions
-
-- Send JSON with `Content-Type: application/json`.
-- Preserve field spelling and capitalization.
-- Send `Token` in the JSON request body of station endpoints.
-- Examples use placeholders and illustrative data. Replace `YOUR_...` values and example station/root identifiers before use.
-- cURL examples use POSIX shell line continuations.
 
 | Response field | JSON type | Meaning |
 | --- | --- | --- |
