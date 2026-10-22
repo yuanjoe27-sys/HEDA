@@ -5,7 +5,6 @@ The HEDA API provides station information, latest sensor readings, historical da
 ## Contents
 
 - [API overview](#api-overview)
-- [Getting started](#getting-started)
 - [Authentication](#authentication)
 - [Station tree](#station-tree)
 - [Station details and sensor data](#station-details-and-sensor-data)
@@ -17,25 +16,6 @@ The HEDA API provides station information, latest sensor readings, historical da
 | POST | `/hd/user/auth.json` | Obtain an access token. |
 | POST | `/hd/station/tree.json` | Discover station numbers and names. |
 | POST | `/hd/station/detaillist.json` | Retrieve station details and sensor data for a time range. |
-
-## Getting started
-
-Base URL for the documented deployment:
-
-```text
-https://heda.cosmos-ins.com.my:7077
-```
-
-| Response field | JSON type | Meaning |
-| --- | --- | --- |
-| `Code` | integer | Application result: `0` = success; non-zero = error. This is separate from the https status code. |
-| `Success` | boolean | `true` = success; `false` = failure. Present in the authentication and detail examples; absent from the supplied tree example. |
-| `Message` | string | Result description. Authentication/detail examples use `OK`; the tree example uses an empty string. |
-| `Response` | object | Endpoint-specific payload. Error payload structure is unspecified. |
-
-Check `Code` and, when present, `Success` before reading the payload. If the service reports an invalid or expired token, authenticate again.
-
-Timestamps described below are in seconds. Their epoch and timezone interpretation still require confirmation; do not infer a fixed token lifetime from the examples.
 
 ## Authentication
 
