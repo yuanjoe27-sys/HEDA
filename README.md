@@ -21,11 +21,6 @@ The HEDA API provides station information, latest sensor readings, historical da
 
 Authenticate with your customer ID, application ID and account credentials to obtain a token.
 
-```https
-POST /hd/user/auth.json
-Content-Type: application/json
-```
-
 ### Request parameters
 
 | Parameter | Required | JSON type | Description |
