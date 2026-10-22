@@ -233,7 +233,7 @@ Content-Type: application/json
 {
   "Token": "YOUR_ACCESS_TOKEN",
   "StationSns": ["102"],
-  "StationNms": ["KROHNE FM"]`
+  "StationNms": ["KROHNE FM"]`,
   "Begin": 1790697600, //Timestamps in seconds.
   "End": 1790699400  //Timestamps in seconds.
 }
