@@ -97,19 +97,23 @@ curl --request POST 'https://heda.cosmos-ins.com.my:7077/hd/user/auth.json' \
 
 ### Example response
 
-```json
+**Key field: `Response.Token`. After confirming a successful response, save this token for subsequent API requests. Other user information fields can be ignored.**
+
+Comments below are for documentation only; the actual API response uses standard JSON.
+
+```jsonc
 {
-  "Code": 0,
-  "Success": true,
-  "Message": "OK",
+  "Code": 0, // Required: check that the value is 0 (success).
+  "Success": true, // Required: check that the value is true.
+  "Message": "OK", // Only needed for troubleshooting when the request fails.
   "Response": {
-    "Token": "YOUR_ACCESS_TOKEN",
-    "Aid": "YOUR_APPLICATION_ID",
-    "Cid": "YOUR_CUSTOMER_ID",
-    "Uid": "EXAMPLE_USER_ID",
-    "UserName": "YOUR_USERNAME",
-    "Ext": null,
-    "Exp": 1790704800
+    "Token": "YOUR_ACCESS_TOKEN", // REQUIRED: save this token for subsequent API requests.
+    "Aid": "YOUR_APPLICATION_ID", // Can be ignored.
+    "Cid": "YOUR_CUSTOMER_ID", // Can be ignored.
+    "Uid": "EXAMPLE_USER_ID", // Can be ignored.
+    "UserName": "YOUR_USERNAME", // Can be ignored.
+    "Ext": null, // Can be ignored.
+    "Exp": 1790704800 // Optional: token expiry timestamp (seconds).
   }
 }
 ```
@@ -117,6 +121,10 @@ curl --request POST 'https://heda.cosmos-ins.com.my:7077/hd/user/auth.json' \
 ## Station tree
 
 Query the hierarchy of divisions, stations and equipment nodes. Station nodes provide the filters for the station-data endpoint.
+
+**Step 2 — Get station numbers and names for the next API request.** After confirming a successful response, traverse `Response` and its nested `Children` arrays. For each node with `Type = "STATION"`, extract and save **`StationNo`** and **`Name`**. Use `StationNo` as an item in `StationSns`, or `Name` as an item in `StationNms`, when calling `/hd/station/detaillist.json` in the next step.
+
+`Type` identifies station nodes, and `Children` lets you find them at any depth. Division names are not station names. `ObjId`, `Position` and `Area` can be ignored when the purpose is to obtain station numbers and names.
 
 Endpoint: `/hd/station/tree.json`  
 Content type: `application/json`  
@@ -138,8 +146,8 @@ https method: **to be confirmed**.
 | Node field | JSON type | Description |
 | --- | --- | --- |
 | `Type` | string | Node classification; examples include `DIVISION` and `STATION`. |
-| `Name` | string | Display name; station nodes supply `StationNms`. |
-| `StationNo` | string | Station number; station nodes supply `StationSns`. Availability on other node types is unspecified. |
+| **`Name`** | string | **Key field on station nodes: save for the next request's `StationNms` array.** Names on division nodes are not station names. |
+| **`StationNo`** | string | **Key field on station nodes: save for the next request's `StationSns` array.** Availability on other node types is unspecified. |
 | `ObjId` | string | Unique tree-node ID. |
 | `Position` | object | Node center coordinates. |
 | `Position.Lng` | number | Longitude. |
@@ -164,31 +172,33 @@ Replace `DIV_001` with a valid root ID for your account.
 
 The `Area` example is abbreviated; it does not establish polygon validation or closure rules.
 
-```json
+Comments below are for documentation only; the actual API response uses standard JSON.
+
+```jsonc
 {
-  "Code": 0,
-  "Response": {
-    "Type": "DIVISION",
-    "Name": "East Operation Zone",
-    "ObjId": "DIV_001",
-    "Position": {"Lng": 120.123456, "Lat": 30.654321},
-    "Area": [
+  "Code": 0, // Required: check that the value is 0 (success).
+  "Response": { // Root node; inspect its Type and traverse its Children.
+    "Type": "DIVISION", // A division node, not a station.
+    "Name": "East Operation Zone", // Division name; do not use in StationNms.
+    "ObjId": "DIV_001", // Can be ignored for station selection.
+    "Position": {"Lng": 120.123456, "Lat": 30.654321}, // Can be ignored.
+    "Area": [ // Can be ignored.
       {"Lng": 120.123, "Lat": 30.654},
       {"Lng": 120.125, "Lat": 30.656}
     ],
-    "Children": [
+    "Children": [ // Required: traverse nested children to find all station nodes.
       {
-        "Type": "STATION",
-        "Name": "PJ.821 USJ 1 Subang Permai (MP1)",
-        "StationNo": "111",
-        "ObjId": "STA_001",
-        "Position": {"Lng": 120.124, "Lat": 30.655},
-        "Area": [],
-        "Children": []
+        "Type": "STATION", // Required: identifies this node as a station.
+        "Name": "PJ.821 USJ 1 Subang Permai (MP1)", // KEY: save for StationNms in the next API request.
+        "StationNo": "111", // KEY: save for StationSns in the next API request.
+        "ObjId": "STA_001", // Can be ignored; do not use as StationSns.
+        "Position": {"Lng": 120.124, "Lat": 30.655}, // Can be ignored.
+        "Area": [], // Can be ignored.
+        "Children": [] // No child nodes in this example; traverse if non-empty.
       }
     ]
   },
-  "Message": ""
+  "Message": "" // Only needed for troubleshooting when the request fails.
 }
 ```
 
@@ -200,6 +210,19 @@ The `Area` example is abbreviated; it does not establish polygon validation or c
 | `Name` | `StationNms` | `"PJ.821 USJ 1 Subang Permai (MP1)"` → `["PJ.821 USJ 1 Subang Permai (MP1)"]` |
 
 Select station nodes rather than the division root. Use `StationNo` rather than `ObjId` for `StationSns`.
+
+For the station in the example, the next data-query request can use:
+
+```json
+{
+  "Token": "YOUR_ACCESS_TOKEN",
+  "StationSns": ["111"],
+  "Begin": 1790697600,
+  "End": 1790699400
+}
+```
+
+Replace the token, station number and time range with your actual values. To filter by name instead, replace `StationSns` with `"StationNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`. Either filter can be used; both are not required. If both are supplied, the station must match both filters.
 
 ## Station details and sensor data
 
