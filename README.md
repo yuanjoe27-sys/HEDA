@@ -146,37 +146,9 @@ Content type: `application/json`
 }
 ```
 
-### Map a site to a data-query filter
-
-| site-node field | Query parameter | Example |
-| --- | --- | --- |
-| `StationNo` | `StationSns` | `"111"` → `["111"]` |
-| `Name` | `StationNms` | `"PJ.821 USJ 1 Subang Permai (MP1)"` → `["PJ.821 USJ 1 Subang Permai (MP1)"]` |
-
-Select site nodes rather than the division root. Use `StationNo` rather than `ObjId` for `StationSns`.
-
-For the site in the example, the next data-query request can use:
-
-```json
-{
-  "Token": "YOUR_ACCESS_TOKEN",
-  "StationSns": ["111"],
-  "StationNms": 'PJ.821 USJ 1 Subang Permai (MP1)', 
-  "Begin": 1790697600,
-  "End": 1790699400
-}
-```
-
-Replace the token, site number and time range with your actual values. To filter by name instead, replace `StationSns` with `"StationNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`. Either filter can be used; both are not required. If both are supplied, the site must match both filters.
-
-## site details and sensor data
+## Site details and sensor data
 
 Retrieve site metadata, sensor metadata, latest readings, historical samples and alarm-related fields for matching sites.
-
-```https
-POST https://heda.cosmos-ins.com.my:7077/hd/station/detaillist.json
-Content-Type: application/json
-```
 
 ### Request parameters
 
@@ -196,8 +168,8 @@ Use a start time earlier than the end time. If both site filters are supplied, a
 Response
 ├── Total                         Number of matched sites
 └── Data[]                        site results
-    ├── site                   site identity and location
-    ├── Sensors[]                 Sensors belonging to this site
+    ├── site                      site identity and location
+    ├── Sensors[]                 Sensors belonging to this site //Key
     │   ├── Unit                  Measurement unit
     │   ├── Time / Value          Latest reading
     │   └── Vals[]                Historical samples
@@ -212,7 +184,7 @@ Response
 | `Response.Total` | integer | Number of matched sites. |
 | `Response.Data` | array of objects | site results. |
 | `Response.Data[].site` | object | site metadata. |
-| `Response.Data[].Sensors` | array of objects | Sensors, readings and alarm-related fields. |
+| **`Response.Data[].Sensors`** | array of objects | Sensors, readings and alarm-related fields. |
 | `Response.Data[].Divisions` | array of objects | Division metadata. |
 | `Response.Data[].Group` | integer | site group identifier. |
 | `Response.Data[].TimeStamp` | integer | Latest site-data timestamp. |
@@ -254,12 +226,17 @@ Fields inside `Response.Data[].Sensors[]`:
 
 ### Example request
 
-Query site `111` for a 1,800-second interval. Replace the number with one available to your account.
-
 ```bash
-curl --request POST 'https://heda.cosmos-ins.com.my:7077/hd/station/detaillist.json' \
-  --header 'Content-Type: application/json' \
-  --data '{"Token":"YOUR_ACCESS_TOKEN","StationSns":["111"],"Begin":1790697600,"End":1790699400}'
+POST https://heda.cosmos-ins.com.my:7077/hd/station/detaillist.json
+Content-Type: application/json
+
+{
+  "Token": "YOUR_ACCESS_TOKEN",
+  "StationSns": ["111"],
+  "StationNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`
+  "Begin": 1790697600, //Timestamps in seconds.
+  "End": 1790699400  //Timestamps in seconds.
+}
 ```
 
 Alternatively, or replace `StationSns` with `"StationNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`. or both.
@@ -309,5 +286,3 @@ This example shows core reading fields; additional metadata and alarm fields are
   }
 }
 ```
-
-The result contains one site (`Sn = "111"`). Its sensor's latest value is `851.877 m³`, associated with `Sensors[0].Time`. `Vals` contains two historical samples strictly inside the requested interval; this example does not establish boundary inclusivity.
