@@ -122,9 +122,9 @@ Content type: `application/json`
 {
   "Code": 0, 
   "Response": { 
-    "Type": "DIVISION", // Can be ignored.
-    "Name": "East Operation Zone", // Can be ignored.
-    "ObjId": "DIV_001", // Can be ignored.
+    "Type": "D", // Can be ignored.
+    "Name": "AIS test", // Can be ignored.
+    "ObjId": "6aab4a964dce2c19843c639e", // Can be ignored.
     "Position": {"Lng": 120.123456, "Lat": 30.654321}, // Can be ignored.
     "Area": [ // Can be ignored.
       {"Lng": 120.123, "Lat": 30.654},
@@ -166,17 +166,17 @@ Use a start time earlier than the end time. If both site filters are supplied, a
 
 ```text
 Response
-├── Total                         Number of matched sites
+├── Total                         Number of matched sites // Can be ignored.
 └── Data[]                        site results
     ├── site                      site identity and location
-    ├── Sensors[]                 Sensors belonging to this site //Key
+    ├── Sensors[]                 Sensors belonging to this site 
     │   ├── Unit                  Measurement unit
     │   ├── Time / Value          Latest reading
     │   └── Vals[]                Historical samples
     │       └── Time / Val        Sample timestamp and value
-    ├── Divisions[]               Division metadata
-    ├── Group                     site group identifier
-    └── TimeStamp                 Latest site-data timestamp
+    ├── Divisions[]               Division metadata    // Can be ignored.
+    ├── Group                     site group identifier // Can be ignored.
+    └── TimeStamp                 Latest site-data timestamp // Can be ignored.
 ```
 
 | Field path | JSON type | Description |
@@ -232,8 +232,8 @@ Content-Type: application/json
 
 {
   "Token": "YOUR_ACCESS_TOKEN",
-  "StationSns": ["111"],
-  "StationNms": ["PJ.821 USJ 1 Subang Permai (MP1)"]`
+  "StationSns": ["102"],
+  "StationNms": ["KROHNE FM"]`
   "Begin": 1790697600, //Timestamps in seconds.
   "End": 1790699400  //Timestamps in seconds.
 }
@@ -253,12 +253,20 @@ This example shows core reading fields; additional metadata and alarm fields are
   "Response": {
     "Total": 1,
     "Data": [
+       "Divisions": [
+          {
+            "dt": "1",
+            "Id": "6aab4a964dce2c19843c639e",
+            "Weight": 14,
+            "Name": "AIS test"
+          }
+        ],
       {
-        "site": {
-          "Id": "EXAMPLE_site_ID",
-          "Name": "PJ.821 USJ 1 Subang Permai (MP1)",
-          "Sn": "111",
-          "Ty": 808,
+        "station": {
+          "Id": "6a0126c8b7faa94c5c4ea57d",
+          "Name": "KROHNE FM",
+          "Sn": "102",
+          "Ty": 1,
           "TyName": "HD86Q",
           "TimeStamp": 1790698800,
           "Position": {"Lat": "34.000000", "Lng": "113.000000"}
@@ -286,3 +294,28 @@ This example shows core reading fields; additional metadata and alarm fields are
   }
 }
 ```
+## Channel Parameter Definitions
+
+Channel meanings depend on the device model. Use the table below to interpret the channel codes; a dash means no definition is provided for that model.
+
+| Channel | Siemens MAG8000 | Aichi MX39-34CR | KROHNE IFC070 |
+| --- | --- | --- | --- |
+| `P1` | Forward totalizer | Forward totalizer | Forward totalizer |
+| `P2` | Reverse totalizer | Reverse totalizer | Reverse totalizer |
+| `P7` | Pipe diameter | — | — |
+| `P8` | Alarm code | Error information | Error information |
+| `A1` | Resistance A | — | Flow velocity |
+| `A2` | Resistance B | — | — |
+| `A4` | Battery percentage | — | Battery level |
+| `A7` | Instantaneous flow rate | Instantaneous flow rate | Instantaneous flow rate |
+| `A8` | Flow velocity | — | Pressure (optional) |
+
+### Device Configuration Reference
+
+| Device model | Direct-read option (`me`) | Serial settings | LCD display |
+| --- | --- | --- | --- |
+| Siemens MAG8000 | `20` | `19200-8-E-1` | Serial number |
+| Aichi MX39-34CR | `6600` | `9600-8-E-1` | — |
+| KROHNE IFC070 | `5900` | `9600-8-E-1` | — |
+
+Serial settings are shown as baud rate, data bits, parity (`E` = even) and stop bits. The `me` values and serial settings are device configuration references, not additional parameters for the API requests above.
