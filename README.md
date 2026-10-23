@@ -319,6 +319,21 @@ This example shows core reading fields; additional metadata and alarm fields are
   }
 }
 ```
+### Alarm fields
+
+Fields inside `Response.Data[].Sensors[]`:
+
+| Field | JSON type | Description |
+| --- | --- | --- |
+| `AlarmType` | string | Alarm type name. |
+| `Alarm_r` | integer | Recovery flag: `0` = not recovered; `1` = recovered. |
+| `STime` | integer | Alarm start timestamp. |
+| `Ref` | number | Alarm threshold reference value. |
+| `Level` | integer | Alarm level; severity mapping is unspecified. |
+| `Confirmed` | integer | `0` = unconfirmed; `1` = confirmed. |
+| `Dispatch` | integer | Work-order dispatch flag: `0` = no; `1` = yes. |
+```
+
 ## Channel Parameter Definitions
 
 Channel meanings depend on the device model. A dash (`—`) means no definition is provided for that model.
