@@ -321,26 +321,56 @@ This example shows core reading fields; additional metadata and alarm fields are
 ```
 ## Channel Parameter Definitions
 
-Channel meanings depend on the device model. Use the table below to interpret the channel codes; a dash means no definition is provided for that model.
+Channel meanings depend on the device model. A dash (`—`) means no definition is provided for that model.
 
-| Channel | Siemens MAG8000 | Aichi MX39-34CR | KROHNE IFC070 |
-| --- | --- | --- | --- |
-| `P1` | Forward totalizer | Forward totalizer | Forward totalizer |
-| `P2` | Reverse totalizer | Reverse totalizer | Reverse totalizer |
-| `P7` | Pipe diameter | — | — |
-| `P8` | Alarm code | Error information | Error information |
-| `A1` | Resistance A | — | Flow velocity |
-| `A2` | Resistance B | — | — |
-| `A4` | Battery percentage | — | Battery level |
-| `A7` | Instantaneous flow rate | Instantaneous flow rate | Instantaneous flow rate |
-| `A8` | Flow velocity | — | Pressure (optional) |
+| Device | Channel | Siemens MAG8000 | KROHNE IFC070 | Unit | Remark |
+| Device | Channel | Siemens MAG8000 | KROHNE IFC070 | Unit | Remark |
+| --- | --- | --- | --- | --- | --- |
+| Meter | P1 | Forward totalizer | Forward totalizer | m³ | Cumulative forward volume. |
+| Meter | P2 | Reverse totalizer | Reverse totalizer | m³ | Cumulative reverse volume. |
+| Meter | SJLJ | Net totalizer | Net totalizer | m³ | Cumulative net volume. |
+| Meter | A7 | Flow rate | Flow rate | m³/h | Instantaneous flow rate. |
+| Meter | A8 | Velocity | — | mm/s | |
+| Meter | A5 | Pressure_1 | — | mH₂O | Pressure channel 1; |
+| Meter | A6 | Pressure_2 | — | mH₂O | Pressure channel 2; |
+| Meter | A1 | Impedance A | Impedance A |  | Impedance measurement for channel A. |
+| Meter | A2 | Impedance B | — |  | Impedance measurement for channel B. |
+| Meter | A4 | Battery percentage | Battery Capacity | Battery percentage %; Battery Capacity Ah | Meter battery percentage; distinct from voltage and remaining capacity. |
+| Meter | P7 | Diameter | — | mm | Pipe or meter diameter parameter. |
+| Meter | P8 | Meter alarm code | Meter alarm code | — | See the [Meter Alarm Code Definitions](#meter-alarm-code-definitions) section below for alarm code descriptions. |
+| Meter | Q1_12 | Serial_Com_Alm | Serial_Com_Alm | — | Communication status: 1 = normal; 2 = alarm. |
+| Logger | V | Battery voltage | Battery voltage | V | Logger battery voltage. |
+| Logger | S | Signal Quality (ASU) | Signal Quality (ASU) | — | Source thresholds: 0–84 = very good; 85–94 = strong; 95–104 = average; 105–114 = weak; >114 = very weak. |
 
-### Device Configuration Reference
+### Meter Alarm Code Definitions
 
-| Device model | Direct-read option (`me`) | Serial settings | LCD display |
-| --- | --- | --- | --- |
-| Siemens MAG8000 | `20` | `19200-8-E-1` | Serial number |
-| Aichi MX39-34CR | `6600` | `9600-8-E-1` | — |
-| KROHNE IFC070 | `5900` | `9600-8-E-1` | — |
+#### Siemens MAG8000
 
-Serial settings are shown as baud rate, data bits, parity (`E` = even) and stop bits. The `me` values and serial settings are device configuration references, not additional parameters for the API requests above.
+| Code | Description |
+| ---: | --- |
+| 1 | Insulation error |
+| 2 | Coil current error |
+| 4 | Preamplifier overload |
+| 8 | Database checksum error |
+| 16 | Low power warning |
+| 32 | Flow overload warning |
+| 64 | Pulse A overload warning |
+| 128 | Pulse B overload warning |
+| 256 | Consumption interval warning |
+| 512 | Leakage warning |
+| 1024 | Empty pipe warning |
+| 2048 | Low impedance warning |
+| 4096 | Flow limit warning |
+| 8192 | Reverse flow warning |
+
+#### KROHNE IFC070
+
+| Code | Description |
+| ---: | --- |
+| 0 | No errors |
+| 1 | Active flow measurement warning condition |
+| 2 | Active battery below 10% warning condition |
+| 4 | Active EEPROM error condition |
+| 8 | Active communication error condition |
+| 16 | Empty pipe |
+| 32 | Mains power failure |
