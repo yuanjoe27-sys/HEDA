@@ -8,7 +8,7 @@ The HEDA API provides site information, latest sensor readings, historical data 
 - [Authentication](#authentication)
 - [Site tree](#site-tree)
 - [Site details and sensor data](#site-details-and-sensor-data)
-
+- [Channel Parameter Definitions](#Channel-Parameter-Definitions)
 ## API overview
 
 | Method | Endpoint | Purpose |
