@@ -206,24 +206,6 @@ Fields inside `Response.Data[].site`:
 | `Position.Lat` | string | Latitude, represented as a string in this endpoint. |
 | `Position.Lng` | string | Longitude, represented as a string in this endpoint. |
 
-### Sensor fields
-
-Fields inside `Response.Data[].Sensors[]`:
-
-| Field | JSON type | Description |
-| --- | --- | --- |
-| `Id` | string | Sensor identifier. |
-| `ObjId` | string | Sensor object identifier. The example matches `Id`; equality is not guaranteed. |
-| `Name` | string | Sensor name. |
-| `Unit` | string | Measurement unit. `m³` represents volume. |
-| `Dp` | integer | Number of decimal places. |
-| `Time` | integer | Timestamp of the latest reading. |
-| `Value` | number | Latest sensor reading. |
-| `DType` | string | Sensor data-type code; the example uses `SJLJ`. Full enum is unspecified. |
-| `Vals` | array of objects | Historical readings for the query period. |
-| `Vals[].Time` | integer | Historical sample timestamp. |
-| `Vals[].Val` | number | Historical sample value. The field name differs from the latest reading's `Value`. |
-
 ## Reading sensor historical values (`Vals`)
 
 **Read historical sensor values from `Response.Data[].Sensors[].Vals[]`. Each entry contains `Val` (the historical value) and `Time` (its timestamp in seconds).**
