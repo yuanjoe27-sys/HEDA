@@ -332,7 +332,6 @@ Fields inside `Response.Data[].Sensors[]`:
 | `Level` | integer | Alarm level; severity mapping is unspecified. |
 | `Confirmed` | integer | `0` = unconfirmed; `1` = confirmed. |
 | `Dispatch` | integer | Work-order dispatch flag: `0` = no; `1` = yes. |
-```
 
 ## Channel Parameter Definitions
 
