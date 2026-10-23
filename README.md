@@ -324,7 +324,6 @@ This example shows core reading fields; additional metadata and alarm fields are
 Channel meanings depend on the device model. A dash (`—`) means no definition is provided for that model.
 
 | Device | Channel | Siemens MAG8000 | KROHNE IFC070 | Unit | Remark |
-| Device | Channel | Siemens MAG8000 | KROHNE IFC070 | Unit | Remark |
 | --- | --- | --- | --- | --- | --- |
 | Meter | P1 | Forward totalizer | Forward totalizer | m³ | Cumulative forward volume. |
 | Meter | P2 | Reverse totalizer | Reverse totalizer | m³ | Cumulative reverse volume. |
