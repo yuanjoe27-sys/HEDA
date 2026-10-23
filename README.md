@@ -224,6 +224,49 @@ Fields inside `Response.Data[].Sensors[]`:
 | `Vals[].Time` | integer | Historical sample timestamp. |
 | `Vals[].Val` | number | Historical sample value. The field name differs from the latest reading's `Value`. |
 
+## Reading sensor historical values (`Vals`)
+
+**Read historical sensor values from `Response.Data[].Sensors[].Vals[]`. Each entry contains `Val` (the historical value) and `Time` (its timestamp in seconds).**
+
+1. Iterate through `Response.Data[]` to access each returned site.
+2. Find the required sensor in `Sensors[]` using its `Id` or `Name`.
+3. Iterate through that sensor's `Vals[]` array.
+4. Read `Val` for the value and `Time` for the corresponding timestamp. Use the parent sensor's `Unit` as the measurement unit.
+
+```text
+Response.Data[]
+└── Sensors[]
+    ├── Id / Name         Identify the required sensor
+    ├── Unit              Measurement unit
+    ├── Value             Latest reading
+    └── Vals[]            Historical readings — read this array
+        ├── Time          Sample timestamp (seconds)
+        └── Val           Historical value — read this field
+```
+
+#### Example
+
+```json
+{
+  "Name": "Net Totalizer",
+  "Unit": "m³",
+  "Value": 851.877,
+  "Vals": [
+    {"Time": 1790697900, "Val": 851.125},
+    {"Time": 1790698800, "Val": 851.877}
+  ]
+}
+```
+
+The `Vals` array contains two historical readings:
+
+| Time (seconds) | Val | Unit |
+| --- | --- | --- |
+| 1790697900 | 851.125 | m³ |
+| 1790698800 | 851.877 | m³ |
+
+> **Important:** Historical readings use `Vals[].Val`, while the latest reading uses `Value`. Field names are case-sensitive. If `Vals` is empty, it contains no historical samples; do not interpret an empty array as a value of zero.
+
 ### Example request
 
 ```bash
