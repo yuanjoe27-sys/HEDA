@@ -218,7 +218,7 @@ Fields inside `Response.Data[].site`:
 ```text
 Response.Data[]
 └── Sensors[]
-    ├── Id / Name         Identify the required sensor
+    ├── Name              Identify the required sensor
     ├── Unit              Measurement unit
     ├── Value             Latest reading
     └── Vals[]            Historical readings — read this array
